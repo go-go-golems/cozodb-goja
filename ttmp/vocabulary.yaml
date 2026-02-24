@@ -1,0 +1,22 @@
+topics:
+    - slug: cozodb
+      description: cozodb topic for CozoDB goja API work
+    - slug: goja
+      description: goja topic for CozoDB goja API work
+    - slug: javascript
+      description: javascript topic for CozoDB goja API work
+    - slug: api
+      description: api topic for CozoDB goja API work
+docTypes:
+    - slug: index
+      description: index document type
+    - slug: design-doc
+      description: design-doc document type
+    - slug: reference
+      description: reference document type
+intent:
+    - slug: long-term
+      description: Long-term reference and planning document
+status:
+    - slug: active
+      description: Active work item
