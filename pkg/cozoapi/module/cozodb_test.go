@@ -147,8 +147,10 @@ func call(t *testing.T, fnValue goja.Value, this goja.Value, args ...goja.Value)
 			t.Fatalf("promise rejected: %v", p.Result().Export())
 		case goja.PromiseStateFulfilled:
 			return p.Result()
-		default:
+		case goja.PromiseStatePending:
 			t.Fatalf("promise still pending")
+		default:
+			t.Fatalf("unexpected promise state: %v", p.State())
 		}
 	}
 	return v

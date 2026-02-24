@@ -72,7 +72,9 @@ func runREPL(vm *goja.Runtime) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Fprintln(os.Stdout, "cozodb-goja repl (type exit to quit)")
 	for {
-		fmt.Fprint(os.Stdout, "js> ")
+		if _, err := fmt.Fprint(os.Stdout, "js> "); err != nil {
+			return fmt.Errorf("write repl prompt: %w", err)
+		}
 		if !scanner.Scan() {
 			if err := scanner.Err(); err != nil {
 				return fmt.Errorf("read repl input: %w", err)
@@ -103,8 +105,10 @@ func renderValue(v goja.Value) string {
 			return fmt.Sprintf("Promise<fulfilled>: %v", p.Result().Export())
 		case goja.PromiseStateRejected:
 			return fmt.Sprintf("Promise<rejected>: %v", p.Result().Export())
-		default:
+		case goja.PromiseStatePending:
 			return "Promise<pending>"
+		default:
+			return "Promise<unknown>"
 		}
 	}
 	return fmt.Sprintf("%v", v.Export())

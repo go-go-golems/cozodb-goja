@@ -136,17 +136,6 @@ func PtrFloat64(v float64) *float64 { return &v }
 
 func PtrBool(v bool) *bool { return &v }
 
-func mergeParams(base CozoParams, extra CozoParams) CozoParams {
-	out := make(CozoParams, len(base)+len(extra))
-	for k, v := range base {
-		out[k] = v
-	}
-	for k, v := range extra {
-		out[k] = v
-	}
-	return out
-}
-
 func sortedKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
