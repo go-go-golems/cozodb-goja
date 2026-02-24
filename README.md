@@ -1,58 +1,63 @@
-# GO GO TEMPLATE
+# cozodb-goja
 
-```
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  __   __  _______  ___      _______  _______  _______ 
-|       ||       ||  |_|  ||       ||   |    |   _   ||       ||       |
-|_     _||    ___||       ||    _  ||   |    |  |_|  ||_     _||    ___|
-  |   |  |   |___ |       ||   |_| ||   |    |       |  |   |  |   |___ 
-  |   |  |    ___||       ||    ___||   |___ |       |  |   |  |    ___|
-  |   |  |   |___ | ||_|| ||   |    |       ||   _   |  |   |  |   |___ 
-  |___|  |_______||_|   |_||___|    |_______||__| |__|  |___|  |_______|
+`cozodb-goja` is an initial Go + goja implementation of the CozoDB JavaScript API contract described in ticket `COJS-01-INITIAL-BUILD`.
+
+## Status
+
+- Implemented core API domain layer in `pkg/cozoapi`:
+  - `exec`, `q`, `cq`, `atomic`
+  - relation compiler + helpers, including `db.rel(name).put/insert/update/rm/del/get/columns/indices/access`
+  - query policy enforcement (limits/timeouts/system-op and relation restrictions)
+- Implemented native goja module adapter in `pkg/cozoapi/module`:
+  - `require("cozodb").open({ backend })`
+  - db handle methods: `exec`, `q`, `cq`, `atomic`, `rel`, `export`, `import`, `close`
+- Added fake backend + tests for deterministic behavior.
+- Added optional `cozo_cgo` adapter scaffold.
+
+## CLI
+
+Run inline code:
+
+```bash
+GOWORK=off go run ./cmd/XXX --eval 'const db = require("cozodb").open(); db.backend'
 ```
 
----
+Run a script file:
 
+```bash
+GOWORK=off go run ./cmd/XXX --script ./examples/demo.js
 ```
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  ___      _______  __   __  _______ 
-|       ||       ||   |    |       ||  |_|  ||       |
-|    ___||   _   ||   |    |    ___||       ||  _____|
-|   | __ |  | |  ||   |    |   |___ |       || |_____ 
-|   ||  ||  |_|  ||   |___ |    ___||       ||_____  |
-|   |_| ||       ||       ||   |___ | ||_|| | _____| |
-|_______||_______||_______||_______||_|   |_||_______|
- __   __  _______  ___   _  _______    __   __  _______  ______   _______ 
-|  |_|  ||   _   ||   | | ||       |  |  |_|  ||       ||    _ | |       |
-|       ||  |_|  ||   |_| ||    ___|  |       ||   _   ||   | || |    ___|
-|       ||       ||      _||   |___   |       ||  | |  ||   |_|| |   |___ 
-|       ||       ||     |_ |    ___|  |       ||  |_|  ||    __ ||    ___|
-| ||_|| ||   _   ||    _  ||   |___   | ||_|| ||       ||   |  |||   |___ 
-|_|   |_||__| |__||___| |_||_______|  |_|   |_||_______||___|  |||_______|
- _______  _______    _______  _______ 
-|       ||       |  |       ||       |
-|    ___||   _   |  |    ___||   _   |
-|   | __ |  | |  |  |   | __ |  | |  |
-|   ||  ||  |_|  |  |   ||  ||  |_|  |
-|   |_| ||       |  |   |_| ||       |
-|_______||_______|  |_______||_______|
- _______  _______  ___      _______  __   __  _______ 
-|       ||       ||   |    |       ||  |_|  ||       |
-|    ___||   _   ||   |    |    ___||       ||  _____|
-|   | __ |  | |  ||   |    |   |___ |       || |_____ 
-|   ||  ||  |_|  ||   |___ |    ___||       ||_____  |
-|   |_| ||       ||       ||   |___ | ||_|| | _____| |
-|_______||_______||_______||_______||_|   |_||_______|
+
+Start REPL:
+
+```bash
+GOWORK=off go run ./cmd/XXX
+```
+
+## JavaScript usage
+
+```js
+const cozo = require("cozodb");
+const db = cozo.open({ backend: "fake" });
+
+db.exec("?[x] <- [[1]]")
+  .then((res) => {
+    console.log(res.scalar());
+  });
+```
+
+Prepared + atomic:
+
+```js
+const q1 = db.cq`?[id] <- [[${"u1"}]]`;
+const q2 = db.cq`?[id] <- [[${"u2"}]]`;
+
+db.atomic([q1, q2]).then((res) => console.log(res.rows));
+```
+
+Relation helper:
+
+```js
+const users = db.rel("users");
+users.put([{ id: "u1", name: "Ada" }], { returning: true });
 ```
