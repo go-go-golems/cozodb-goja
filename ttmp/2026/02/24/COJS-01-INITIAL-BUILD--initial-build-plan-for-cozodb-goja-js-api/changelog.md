@@ -54,3 +54,24 @@ Expanded implementation tasks into detailed phased execution plan (P1-T1..P6-T6)
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/reference/01-investigation-diary-cozodb-goja-js-api.md — Diary step added for execution kickoff
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/tasks.md — Detailed implementation checklist added
 
+
+## 2026-02-24
+
+Implemented core cozoapi domain layer, fake backend, and optional cozo_cgo scaffold with tests (commit 40ccb5f).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/cozoapi_test.go — Domain-level tests for compilers and policy
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/db.go — Core API service layer
+
+
+## 2026-02-24
+
+Added goja module bridge, CLI runner, go-go-goja integration coverage, and lint hardening (commits c3a90db, 7a4fabe, 039fd0c, d763cc6).
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/cmd/XXX/main.go — Eval script and REPL entrypoint
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb.go — Promise-based require module API
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go — go-go-goja runtime integration test
+

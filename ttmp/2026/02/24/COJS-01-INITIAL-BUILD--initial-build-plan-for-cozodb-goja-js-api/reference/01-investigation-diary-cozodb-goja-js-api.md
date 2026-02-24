@@ -11,27 +11,37 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/design-doc/01-cozodb-goja-javascript-api-research-and-implementation-blueprint.md
+    - Path: cmd/XXX/main.go
+      Note: CLI eval script repl runner (commit 7a4fabe)
+    - Path: pkg/cozoapi/db.go
+      Note: Core DB service and policy-enforced execution path (commit 40ccb5f)
+    - Path: pkg/cozoapi/module/cozodb.go
+      Note: goja native module implementation for cozodb (commit c3a90db)
+    - Path: pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go
+      Note: Integration coverage on go-go-goja runtime (commit d763cc6)
+    - Path: pkg/cozoapi/relation.go
+      Note: Relation compiler and db.rel implementation basis (commit 40ccb5f)
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/design-doc/01-cozodb-goja-javascript-api-research-and-implementation-blueprint.md
       Note: |-
         Primary architecture and implementation blueprint produced during this investigation
         Primary research deliverable authored in this ticket
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/scripts/01-evidence-scan.out
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/scripts/01-evidence-scan.out
       Note: |-
         Captured output from evidence scan script
         Captured evidence output used during writing
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/scripts/01-evidence-scan.sh
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/scripts/01-evidence-scan.sh
       Note: |-
         Reproducible evidence collection script created during research
         Reproducible evidence collection helper
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/01-cozo-lib-nodejs-readme.md
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/01-cozo-lib-nodejs-readme.md
       Note: Upstream node adapter API source snapshot
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/cozo-lib-nodejs-index.js
-      Note: Upstream node adapter implementation snapshot
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/02-cozo-lib-wasm-readme.md
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/02-cozo-lib-wasm-readme.md
       Note: Upstream wasm adapter API source snapshot
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/cozodb-sysops.html
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/cozo-lib-nodejs-index.js
+      Note: Upstream node adapter implementation snapshot
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/external/cozodb-sysops.html
       Note: System operation and access-level semantics source snapshot
-    - Path: cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/local/01-cozodb-js.md
+    - Path: ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/sources/local/01-cozodb-js.md
       Note: |-
         Imported user-provided API specification
         Imported specification analyzed in diary
@@ -46,6 +56,7 @@ LastUpdated: 2026-02-24T17:42:00-05:00
 WhatFor: Preserve exact command trail, findings, minor failures, and design rationale used to produce the final research deliverable.
 WhenToUse: Use when reviewing or reproducing this ticket's research workflow.
 ---
+
 
 
 # Investigation Diary - CozoDB Goja JS API
@@ -566,3 +577,203 @@ sed -n '1,220p' <ticket>/scripts/01-evidence-scan.out
 # 4) Validate docs
 docmgr doctor --ticket COJS-01-INITIAL-BUILD --stale-after 30
 ```
+
+## Step 16: Core API, Module, and CLI Implementation
+
+This step executed the plan from `P2` through `P5`: first the pure `pkg/cozoapi` layer, then the goja module bridge (`require("cozodb")`), then CLI/README wiring. The implementation intentionally separated domain logic from JS adapter code so tests could validate behavior without requiring the runtime bridge in every case.
+
+The work produced multiple focused commits with one primary concern each, and included intermediate debugging cycles for decoder safety and promise-state handling.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 15)
+
+**Assistant interpretation:** Implement the checklist one phase at a time, commit in slices, and keep a detailed technical diary while fixing failures encountered during test/lint.
+
+**Inferred user intent:** Ship a usable initial build of the CozoDB JS API in Go/goja with real code, tests, and runnable entrypoint.
+
+**Commit (code):**
+- `40ccb5f` — "feat(cozoapi): add core query compiler, policy, and fake backend"
+- `c3a90db` — "feat(cozoapi): add goja cozodb module with promise-based db API"
+- `7a4fabe` — "feat(cli): add cozodb-goja eval/script/repl runner and usage docs"
+- `039fd0c` — "chore: satisfy lint and harden promise-state handling"
+- `d763cc6` — "test(module): add go-go-goja runtime integration coverage"
+
+### What I did
+
+- Implemented `pkg/cozoapi` foundation:
+  - types/result helpers/options normalization/template compiler/relation compiler/atomic compiler/policy/backend interface/db service.
+- Implemented fake backend and optional `cozo_cgo` scaffold:
+  - `pkg/cozoapi/fakebackend/*`
+  - `pkg/cozoapi/cozocgo/*` (build-tagged stub/scaffold).
+- Added comprehensive unit tests for domain layer:
+  - `pkg/cozoapi/cozoapi_test.go`.
+- Implemented goja module adapter:
+  - `pkg/cozoapi/module/cozodb.go`
+  - exported API: `open`, `exec`, `q`, `cq`, `atomic`, `rel`, `export`, `import`, `close`.
+- Added module tests:
+  - direct `goja + require` tests in `pkg/cozoapi/module/cozodb_test.go`.
+- Added default backend opener and tests:
+  - `pkg/cozoapi/module/default_open.go`
+  - `pkg/cozoapi/module/default_open_test.go`.
+- Added go-go-goja runtime integration test:
+  - `pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go`.
+- Replaced scaffold CLI with practical runtime:
+  - `cmd/XXX/main.go` now supports `--eval`, `--script`, and REPL.
+- Replaced template README with project documentation and usage examples.
+
+### Why
+
+- The domain layer needed to be complete and independently testable before adding runtime glue.
+- JS decoder hardening was required so malformed/missing JS values reject safely instead of panicking.
+- CLI/repl runner was needed to satisfy execution requirements and provide fast manual validation.
+
+### What worked
+
+- `GOWORK=off go test ./...` passed after each stabilization step.
+- `make lint` passed after resolving errcheck/exhaustive/unused findings.
+- CLI smoke run succeeded:
+  - `GOWORK=off go run ./cmd/XXX --eval 'const db = require("cozodb").open(); db.backend'`
+  - output: `fake`
+- go-go-goja integration test executed through runtime-owner path and validated backend call count.
+
+### What didn't work
+
+- Initial module tests failed with an import cycle:
+  - `import cycle not allowed in test`
+  - fix: switched tests to `package cozoapi_test`.
+- Query options decoder initially failed to populate pointer fields via `vm.ExportTo`, then panicked on missing JS fields.
+  - observed failure:
+    - `panic: runtime error: invalid memory address or nil pointer dereference`
+  - fix: manual field decoding + `isAbsent(v)` helper for `nil|undefined|null`.
+- Atomic decoder originally parsed lowerCamel JS objects incorrectly with `vm.ExportTo` into Go struct:
+  - observed rejection: `atomic query 0 has empty script`
+  - fix: explicit `decodePreparedQueryValue` for `script/params/opts`.
+- Relation mutation row decode was too narrow:
+  - observed rejection: `rows must be an array`
+  - fix: broadened decode to support `[]map[string]any`, `[]map[string]CozoValue`, and `[][]any`.
+- Policy rejection surfaced as expected but test expected success:
+  - observed rejection: `policy rejected system operation`
+  - fix: added explicit rejected-promise assertions.
+
+### What I learned
+
+- In goja adapters, relying on generic struct export for camelCase JS payloads and pointer-heavy Go structs is fragile; explicit decoders are safer.
+- Promise-based APIs in tests must assert fulfillment/rejection states directly; otherwise failures can be masked.
+- Keeping backend and compiler logic independent from JS glue made debugging much faster.
+
+### What was tricky to build
+
+- The main tricky edge was JS value absence semantics (`nil`, `undefined`, `null`) crossing into Go decoders. Symptoms appeared as intermittent panics in field access despite apparent guard checks. The fix required a single canonical `isAbsent` helper and applying it consistently to all decoder paths.
+
+### What warrants a second pair of eyes
+
+- Review decoder assumptions in `decodeRows` and `decodePreparedQueryValue` for broader JS object shapes.
+- Review whether promise resolution should move from immediate settlement to owner-loop posting when adding real asynchronous backend calls.
+- Review dependency surface increase from adding `go-go-goja v0.4.0` and resulting indirect modules.
+
+### What should be done in the future
+
+- Implement real Cozo CGO backend wiring under `cozo_cgo` tag (currently scaffold only).
+- Add additional integration coverage for `import/export` and relation metadata methods against a real backend.
+
+### Code review instructions
+
+- Start with pure domain layer:
+  - `pkg/cozoapi/db.go`
+  - `pkg/cozoapi/relation.go`
+  - `pkg/cozoapi/atomic.go`
+  - `pkg/cozoapi/policy.go`
+- Then review module bridge:
+  - `pkg/cozoapi/module/cozodb.go`
+- Then runtime integration and entrypoint:
+  - `pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go`
+  - `cmd/XXX/main.go`
+- Validation commands:
+  - `GOWORK=off go test ./...`
+  - `make lint`
+  - `GOWORK=off go run ./cmd/XXX --eval 'const db = require("cozodb").open(); db.backend'`
+
+### Technical details
+
+- Workspace-go mismatch observed repeatedly for plain workspace test mode:
+  - command: `go test ./...`
+  - error: `go.work lists go 1.23` while modules require `go >= 1.25.7`.
+- Portability path validated with:
+  - `GOWORK=off go test ./...`
+- Lint findings fixed:
+  - unchecked `fmt.Fprint` error
+  - exhaustive switch cases for `goja.PromiseState`
+  - unused helper removal.
+
+## Step 17: Validation, Bookkeeping, and Ticket Closure Pass
+
+This step focused on completing `P6`: rerunning tests/lint in the intended environment modes, updating checklists, and preparing the ticket docs for final closure. The key detail is that workspace-level `go test` remains blocked by the parent `go.work` configuration and is documented explicitly.
+
+The closure pass includes command outputs and blocker framing so future contributors can distinguish code defects from workspace/tooling defects.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 15)
+
+**Assistant interpretation:** finalize implementation with clean validation and clear documentation of any remaining blockers.
+
+**Inferred user intent:** receive a fully transparent implementation result with exact validation status and next actionable steps.
+
+**Commit (code):** pending docs commit
+
+### What I did
+
+- Ran validation matrix:
+  - `go test ./...` (workspace mode)
+  - `GOWORK=off go test ./...`
+  - `make lint`
+  - CLI eval smoke command.
+- Updated `tasks.md` checklist states through `P6-T4`.
+- Appended detailed implementation diary steps (`Step 16`, `Step 17`).
+
+### Why
+
+- The ticket requested task-by-task execution with diary traceability and commit hygiene.
+- Explicit blocker documentation avoids misreporting workspace-go version problems as code regressions.
+
+### What worked
+
+- `GOWORK=off go test ./...` passed.
+- `make lint` passed.
+- CLI smoke command passed.
+
+### What didn't work
+
+- `go test ./...` in workspace mode still fails due parent `go.work` directive mismatch:
+  - `go.work lists go 1.23` while modules require `go >= 1.25.7`.
+
+### What I learned
+
+- The codebase is healthy in module mode (`GOWORK=off`), and remaining failing path is workspace-policy/toolchain configuration external to this repository.
+
+### What was tricky to build
+
+- Distinguishing repository-local implementation status from workspace-level Go toolchain policy required repeated cross-checking of both test modes.
+
+### What warrants a second pair of eyes
+
+- Whether to update parent `go.work` to `go 1.25.7` as a workspace governance decision outside this repository.
+
+### What should be done in the future
+
+- If workspace owners approve, run `go work use` from workspace root to refresh `go.work` go version and rerun workspace-mode tests.
+
+### Code review instructions
+
+- Review validation commands and outputs in this diary step.
+- Verify checklist transitions in `tasks.md`.
+
+### Technical details
+
+- Workspace failure command/output:
+  - `go test ./...`
+  - `module ../go-go-goja listed in go.work file requires go >= 1.25.7, but go.work lists go 1.23`.
+- Passing command/output:
+  - `GOWORK=off go test ./...` -> all packages in this repo pass.
+  - `make lint` -> 0 issues.
