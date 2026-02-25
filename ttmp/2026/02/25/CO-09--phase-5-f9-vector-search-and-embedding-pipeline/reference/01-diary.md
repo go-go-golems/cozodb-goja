@@ -12,9 +12,25 @@ Intent: long-term
 Owners: []
 RelatedFiles:
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/Makefile
-      Note: Repeatable .deps-based cozo_cgo targets
+      Note: |-
+        Repeatable .deps-based cozo_cgo targets
+        run-cgo-seed-only target with SEED_EMBED_FLAGS
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-tui/main.go
+      Note: |-
+        Added explicit --embed-* provider/credential flags and --seed-only mode
+        Explicit --embed-* and --seed-only wiring
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-tui/main_test.go
+      Note: |-
+        Tests for CLI override mapping and validation
+        Coverage for CLI override mapping
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/embedder.go
-      Note: Env-driven embedding provider configuration
+      Note: |-
+        Env-driven embedding provider configuration including OpenAI base URL override
+        OpenAI base URL env override support
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/embedder_test.go
+      Note: |-
+        Coverage for OpenAI base URL env override
+        OpenAI base URL override test
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
       Note: Added Host.EmbedText API and provider lifecycle
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
@@ -43,10 +59,11 @@ RelatedFiles:
       Note: Phase 5 task queue referenced by diary
 ExternalSources: []
 Summary: Implementation diary for CO-09
-LastUpdated: 2026-02-25T14:02:00-05:00
+LastUpdated: 2026-02-25T14:24:00-05:00
 WhatFor: Track phase 5 vector search and embedding implementation
 WhenToUse: Use when reviewing CO-09 execution progress
 ---
+
 
 
 
@@ -410,3 +427,81 @@ After this, the tagged vsearch test target passes consistently with `.deps`. Int
 ### Technical details
 - Default library path used by Makefile:
   - `../../cozodb-goja/.deps/cozo/libcozo_c.a`
+
+## Step 6: Add Explicit Embedding Flags + Seed-Only Runtime for Real Credential Validation
+
+This step addressed the request to make real-provider testing explicit at the app boundary instead of depending on implicit profile loading behavior. The `cozo-tui` binary now accepts dedicated embedding/provider flags and can run seeding without entering the interactive TUI.
+
+### Prompt Context
+
+**User prompt (verbatim):** "what do you mean by that? but no, just use bespoke flags or ways of configuring an embeddings provider to the seed command/TUI so we can test things for real with real credentials"
+
+**Assistant interpretation:** Add first-class CLI configuration controls for embeddings that affect both seed and runtime flows, then validate with a real provider run.
+
+**Inferred user intent:** Preserve app-level control and make real-credentials smoke tests straightforward and repeatable.
+
+**Commit (code):** `c63f24b` — "co-09: add explicit embed flags for seed/tui and seed-only run mode"
+
+### What I did
+- Added `cozo-tui` flags:
+  - `--embed-provider`
+  - `--embed-engine`
+  - `--embed-dimensions`
+  - `--embed-openai-api-key`
+  - `--embed-openai-base-url`
+  - `--embed-ollama-base-url`
+  - `--embed-disable-pinocchio`
+  - `--embed-pinocchio-profile`
+  - `--embed-pinocchio-config-file`
+  - `--embed-pinocchio-profile-file`
+- Added `--seed-only` mode so seed flow can run and exit without opening Bubble Tea TTY UI.
+- Wired CLI overrides to `COZO_TUI_*` runtime env vars before DB open/seed/TUI init, so all host instances (F8/F9/seed) observe the same configuration.
+- Extended embedder env override logic to support `COZO_TUI_OPENAI_BASE_URL` / `OPENAI_BASE_URL`.
+- Updated F9 hint line to advertise `--embed-*` flags as primary configuration path.
+- Added repeatable make target:
+  - `make run-cgo-seed-only`
+  - with passthrough `SEED_EMBED_FLAGS='...'`.
+- Added tests:
+  - `cmd/cozo-tui/main_test.go` for flag-to-env mapping and dimension validation.
+  - `internal/geppettohost/embedder_test.go` for OpenAI base URL override.
+
+### Why
+- Needed a deterministic way to run live seeding/query paths with explicit provider credentials, independent from implicit machine profile defaults.
+- Needed a non-interactive path because this execution environment cannot open `/dev/tty`.
+
+### What worked
+- Unit tests for CLI override behavior and embedder overrides pass.
+- Live seed run using explicit OpenAI flags succeeds via `.deps` native backend.
+- Makefile wrapper now reproduces the live seed run without manual command reconstruction.
+
+### What didn't work
+- Interactive TUI manual smoke still cannot be finalized in this session due missing `/dev/tty`; this remains an environment constraint, not a provider/configuration blocker.
+
+### What I learned
+- App-level flags + env mapping give the cleanest compatibility path without invasive refactors across all host construction sites.
+- `--seed-only` closes most runtime-verification needs for credentialed embedding flows when interactive UI is unavailable.
+
+### What was tricky to build
+- Ensuring new CLI overrides apply consistently across all runtime paths that lazily create hosts later (seed, extraction, vector search).
+
+### What warrants a second pair of eyes
+- Whether to expose a redacted effective-provider summary at startup for easier operator visibility without leaking secrets.
+
+### What should be done in the future
+- Run `make run-cgo-tui` from an interactive terminal to fully close manual F9 smoke checklist.
+
+### Code review instructions
+- Review:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-tui/main.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/embedder.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/Makefile`
+- Validate:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./cmd/cozo-tui ./internal/geppettohost ./internal/tui/screens/vsearch -count=1`
+  - `make run-cgo-seed-only SEED_DB=/tmp/cozo-tui-real-seed-make.db SEED_EMBED_FLAGS='--embed-provider openai --embed-engine text-embedding-3-small --embed-dimensions 384'`
+
+### Technical details
+- Real-provider validation command executed in this session:
+  - `CGO_LDFLAGS="-L$(pwd)/../../cozodb-goja/.deps/cozo" go run -tags cozo_cgo ./cmd/cozo-tui --engine sqlite --db /tmp/cozo-tui-real-seed.db --seed --seed-only --embed-provider openai --embed-engine text-embedding-3-small --embed-dimensions 384`
+- Makefile equivalent command executed successfully:
+  - `make run-cgo-seed-only SEED_DB=/tmp/cozo-tui-real-seed-make.db SEED_EMBED_FLAGS='--embed-provider openai --embed-engine text-embedding-3-small --embed-dimensions 384'`

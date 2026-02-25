@@ -88,6 +88,8 @@
 
 - [x] Run `gofmt` on F9 code changes
 - [x] Run module tests (`go test ./... -count=1`)
+- [x] Add explicit CLI/provider override path for real-credential seed and runtime testing
+- [x] Add non-interactive seed execution mode and repeatable make target for live-provider validation
 - [ ] Verify F9 manual smoke in TUI
   Remaining in this session: `make run-cgo-tui` reaches DB open with `.deps` linking but cannot launch interactive UI due missing `/dev/tty` in non-interactive agent runtime.
 - [x] Update CO-09 changelog with progress details
