@@ -8,7 +8,7 @@
 - [x] Add minimal placeholder `main.go` that compiles
 - [x] Add dependency `github.com/go-go-golems/cozodb-goja`
 - [x] Add Bubble Tea dependencies (`bubbletea`, `bubbles`, `lipgloss`)
-- [ ] Add goja/geppetto dependencies needed by runtime packages
+- [x] Add goja/geppetto dependencies needed by runtime packages
 - [x] Add module to top-level `go.work`
 - [x] Run `go list ./...` in new module
 - [x] Run `go test ./... -count=1` in new module
@@ -46,21 +46,21 @@
 
 ## Workstream D: Plugin Runtime Foundation (Phase 3)
 
-- [ ] Create `internal/plugins/types.go`
-- [ ] Create `internal/plugins/loader.go`
-- [ ] Create `internal/plugins/runner.go`
-- [ ] Port descriptor validation logic from runner `plugin_loader.go`
-- [ ] Port run-input canonicalization logic
-- [ ] Port output decoding behavior
-- [ ] Create `internal/geppettohost/options.go`
-- [ ] Create `internal/geppettohost/runtime.go`
-- [ ] Create `internal/geppettohost/host.go`
-- [ ] Create `internal/geppettohost/embedder.go`
-- [ ] Create `internal/geppettohost/errors.go`
-- [ ] Register `cozodb` module in host runtime
-- [ ] Register `geppetto` and `geppetto/plugins` modules in host runtime
-- [ ] Add per-run timeout enforcement in runtime execution
-- [ ] Add panic recovery wrapper around plugin execution
+- [x] Create `internal/plugins/types.go`
+- [x] Create `internal/plugins/loader.go`
+- [x] Create `internal/plugins/runner.go`
+- [x] Port descriptor validation logic from runner `plugin_loader.go`
+- [x] Port run-input canonicalization logic
+- [x] Port output decoding behavior
+- [x] Create `internal/geppettohost/options.go`
+- [x] Create `internal/geppettohost/runtime.go`
+- [x] Create `internal/geppettohost/host.go`
+- [x] Create `internal/geppettohost/embedder.go`
+- [x] Create `internal/geppettohost/errors.go`
+- [x] Register `cozodb` module in host runtime
+- [x] Register `geppetto` and `geppetto/plugins` modules in host runtime
+- [x] Add per-run timeout enforcement in runtime execution
+- [x] Add panic recovery wrapper around plugin execution
 
 ## Workstream E: Script Relocation and Runtime Smoke
 

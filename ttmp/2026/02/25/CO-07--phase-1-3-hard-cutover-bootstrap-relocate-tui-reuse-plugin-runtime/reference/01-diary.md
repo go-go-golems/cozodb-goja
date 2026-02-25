@@ -17,6 +17,22 @@ RelatedFiles:
       Note: Module/dependency baseline for relocation
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/go.sum
       Note: Resolved dependency lockfile for relocation
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/embedder.go
+      Note: Runtime global embed helper
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/errors.go
+      Note: Timeout/panic error normalization
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
+      Note: High-level RunExtractorScript entrypoint
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/options.go
+      Note: Host runtime options and defaults
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/runtime.go
+      Note: goja runtime setup and module registration
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader.go
+      Note: Descriptor validation
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/runner.go
+      Note: Descriptor load/create/run flow with guarded executor
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/types.go
+      Note: Plugin descriptor and run request structs
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
       Note: Relocated screen router for F1-F7
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/seeddata/seed.go
@@ -27,6 +43,7 @@ LastUpdated: 2026-02-25T12:30:00-05:00
 WhatFor: Chronological build/debug/validation notes for relocation and runtime foundation work
 WhenToUse: Use to review implementation steps and reproduce results
 ---
+
 
 
 # Diary
@@ -164,3 +181,79 @@ The relocation was completed as one cohesive commit after formatting and compile
   - from `github.com/go-go-golems/cozodb-goja/internal/tui/...`
   - to `github.com/manuel/cozo-extraction-tui/internal/tui/...`
 - `go.sum` added by dependency resolution during relocation.
+
+## Step 3: Build Plugin Runtime Foundation (Workstream D)
+
+This step introduced the extraction-side plugin runtime primitives needed for JavaScript descriptor execution outside the old prototype runner binary. It adds two focused packages: `internal/plugins` for descriptor loading/normalization/decoding and `internal/geppettohost` for runtime wiring and guarded execution.
+
+The result is a reusable host API that can execute extractor scripts with registered `cozodb` and geppetto modules, while enforcing timeout and panic recovery behavior.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue executing CO-07 checklist items with granular commits and diary updates.
+
+**Inferred user intent:** Build the migration foundation incrementally and make each step reviewable and reproducible.
+
+**Commit (code):** `213e79f` — "co-07: add plugin loader and geppetto host runtime foundation"
+
+### What I did
+- Added `internal/plugins` package:
+  - `types.go` (descriptor/run types and constants)
+  - `loader.go` (descriptor validation, run-input canonicalization, return decoding)
+  - `runner.go` (descriptor require/create/run flow with guarded executor hook)
+- Added `internal/geppettohost` package:
+  - `options.go` (runtime options + defaults)
+  - `runtime.go` (goja + eventloop + require registry + module registration)
+  - `host.go` (high-level `RunExtractorScript` API)
+  - `embedder.go` (global injection helper)
+  - `errors.go` (timeout/panic normalization)
+- Registered runtime modules:
+  - `cozodb` via `github.com/go-go-golems/cozodb-goja/pkg/cozoapi/module`
+  - `geppetto` and `geppetto/plugins` via `gp.Register(...)`
+  - optional `runnerdb`/`database` via go-go-goja `DBModule`
+- Added timeout interrupt guard (`vm.Interrupt`) and panic recovery wrapper in `ExecuteWithGuards`.
+- Updated module dependencies with `go mod tidy`.
+- Validated with `go test ./... -count=1`.
+
+### Why
+- CO-07 Phase 3 requires extracting runtime/plugin logic from prototype runner into reusable package boundaries in the relocated module.
+
+### What worked
+- All new packages compile.
+- Runtime now exposes required module registrations.
+- Guarded executor path integrates with plugin loader.
+
+### What didn't work
+- Initial build failed due `goja.InterruptedError` API misuse:
+  - Error: `internal/geppettohost/errors.go:49:16: v.Value (value of type func() interface{}) is not an interface`
+  - Fix: switched from `v.Value` to `v.Value()`.
+
+### What I learned
+- Interrupt payload extraction depends on goja version API shape (`Value()` accessor).
+- Keeping timeout/panic handling in runtime layer allows plugin loader to stay transport-focused.
+
+### What was tricky to build
+- Timeout guard and panic normalization must cooperate with goja's panic-based interruption semantics; otherwise errors become ambiguous or interrupts leak across runs.
+
+### What warrants a second pair of eyes
+- Runtime lifecycle in `internal/geppettohost/runtime.go` (`loop.Start`/`Stop`, `DBModule` close, interrupt clearing) should be reviewed for edge-case cleanup ordering.
+
+### What should be done in the future
+- Add targeted tests for invalid descriptors, canonicalization, timeout handling, and panic normalization (Workstream F).
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/runner.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/runtime.go`
+- Then inspect:
+  - `internal/plugins/loader.go`
+  - `internal/geppettohost/errors.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Guarded execution hook type: `type GuardedExecutor func(timeout time.Duration, fn func() (goja.Value, error)) (goja.Value, error)`.
+- Timeout enforcement uses `vm.Interrupt(&TimeoutError{...})` and `vm.ClearInterrupt()` per run.
