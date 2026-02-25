@@ -43,8 +43,26 @@ RelatedFiles:
       Note: Plugin descriptor and run request structs
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
       Note: Relocated screen router for F1-F7
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model_parity_test.go
+      Note: Default backend app hotkey/quit parity checks
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/dashboard/model_parity_test.go
+      Note: Dashboard data fetch parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/evolution/model_parity_test.go
+      Note: Evolution snapshot parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/network/model_parity_test.go
+      Note: Network graph parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/people/model_parity_test.go
+      Note: People list/preview parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/query/model_parity_test.go
+      Note: Query execution parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/relationships/model_parity_test.go
+      Note: Relationships detail parity check
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/timeline/model_parity_test.go
+      Note: Timeline parity check
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/seeddata/seed.go
       Note: Relocated seed data initializer
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/testutil/db.go
+      Note: Seeded mem DB helper for cozo_cgo parity tests
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/fixtures/extractor_fixture.js
       Note: Deterministic smoke test extractor fixture
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/fixtures/transcript_fixture.txt
@@ -65,6 +83,7 @@ LastUpdated: 2026-02-25T12:30:00-05:00
 WhatFor: Chronological build/debug/validation notes for relocation and runtime foundation work
 WhenToUse: Use to review implementation steps and reproduce results
 ---
+
 
 
 
@@ -422,3 +441,76 @@ After hardening field parsing, both module tests and boundary tests in `cozodb-g
 ### Technical details
 - Field-read helper added: `readOptionalStringField(obj, key)`.
 - Loader fixtures use a local `geppetto/plugins` shim in tests to avoid heavy external runtime setup.
+
+## Step 6: Add TUI Parity Test Harness and Record Linker Blocker (Workstream C, Partial)
+
+This step added a parity test harness for the relocated TUI screens and app shell behavior. The shell-level checks (hotkeys and quit semantics) now run in default tests. Screen data parity checks were added behind `cozo_cgo` build tags because they require the native Cozo backend.
+
+Execution of the `cozo_cgo` suite is currently blocked by a local static archive issue in a read-only module cache location.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue through remaining tasks and keep diary/changelog accurate, including blockers.
+
+**Inferred user intent:** Maximize completed scope while keeping unresolved environment constraints explicit.
+
+**Commit (code):** `1ee3a83` — "co-07: add cozo_cgo parity smoke tests for relocated tui"  
+**Commit (code):** `007a1ae` — "co-07: make app parity tests run on default fake backend"
+
+### What I did
+- Added `cozo_cgo`-gated parity tests for screen fetch/load behavior:
+  - `internal/tui/screens/*/model_parity_test.go`
+- Added shared seeded-db helper for parity tests:
+  - `internal/tui/testutil/db.go`
+- Added app-level parity tests:
+  - `internal/tui/app/model_parity_test.go`
+- Refactored app parity tests to use `fakebackend` so default `go test ./...` validates:
+  - F1-F7 hotkey routing
+  - quit closes DB outside query screen
+  - `q` on query screen does not trigger quit command
+- Ran default suite:
+  - `go test ./... -count=1` (pass)
+- Attempted tagged parity suite:
+  - `go test -tags cozo_cgo ./internal/tui/screens/... -count=1` (blocked)
+- Attempted local fix:
+  - `ranlib /home/manuel/go/pkg/mod/github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a` (permission denied)
+
+### Why
+- Workstream C requires parity evidence for relocated F1-F7 behavior.
+
+### What worked
+- Default test suite now includes app-level behavioral parity assertions.
+- Cozo-backed screen parity tests are implemented and ready for environments with writable/valid native archive setup.
+
+### What didn't work
+- Tagged parity suite failed during link:
+  - `/usr/bin/ld: .../libcozo_c.a: error adding symbols: archive has no index; run ranlib to add one`
+- `ranlib` remediation failed due permissions:
+  - `ranlib: could not create temporary file whilst writing archive: Permission denied`
+
+### What I learned
+- Native Cozo test execution depends on local archive hygiene and write access to module-cache artifacts.
+
+### What was tricky to build
+- Keeping parity tests valuable without destabilizing default test runs required split strategy: default backend for shell behavior, `cozo_cgo`-gated tests for full screen data parity.
+
+### What warrants a second pair of eyes
+- Decide whether to vendor or locally mirror `libcozo_c.a` to a writable path for deterministic `cozo_cgo` CI/testing.
+
+### What should be done in the future
+- Resolve native archive indexing path so `go test -tags cozo_cgo ./internal/tui/screens/...` can run and fully close Workstream C.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model_parity_test.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/dashboard/model_parity_test.go` (pattern for others)
+- Validate:
+  - default: `go test ./... -count=1`
+  - native (currently blocked): `go test -tags cozo_cgo ./internal/tui/screens/... -count=1`
+
+### Technical details
+- Build tags used for native-dependent parity tests:
+  - `//go:build cozo_cgo`
+  - `// +build cozo_cgo`

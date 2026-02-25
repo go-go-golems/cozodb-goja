@@ -40,8 +40,8 @@
 - [ ] Validate F5 network graph render
 - [ ] Validate F6 timeline render
 - [ ] Validate F7 query console executes scripts
-- [ ] Verify screen switching hotkeys F1-F7
-- [ ] Verify quit flow and DB close behavior
+- [x] Verify screen switching hotkeys F1-F7
+- [x] Verify quit flow and DB close behavior
 - [ ] Document parity results in changelog
 
 ## Workstream D: Plugin Runtime Foundation (Phase 3)
