@@ -18,3 +18,4 @@
   - Dry run passed for bundle upload to `/ai/2026/02/25/CO-11`.
   - Uploaded `CO-11 Glazed Config Cutover Research.pdf`.
   - Verified remote listing via `remarquee cloud ls /ai/2026/02/25/CO-11 --long --non-interactive`.
+- Locked implementation policy from user direction: simplest path, hard cutover, no backwards compatibility, precedence fixed to `flags > env > profiles > config > defaults` for this iteration.

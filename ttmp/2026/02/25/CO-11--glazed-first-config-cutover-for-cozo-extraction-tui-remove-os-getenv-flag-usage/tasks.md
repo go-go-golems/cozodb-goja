@@ -1,6 +1,13 @@
 # Tasks
 
-## Research and planning
+## Locked decisions (hard cutover)
+
+- [x] Use hard cutover only (no backwards compatibility path).
+- [x] Keep simplest precedence for now: `flags > env > profiles > config > defaults`.
+- [x] Remove runtime `os.Getenv` usage from non-test code in cutover scope.
+- [x] Remove standard `flag` parsing from command entrypoints in cutover scope.
+
+## Research and planning (completed)
 
 - [x] Create CO-11 ticket workspace and baseline docs.
 - [x] Analyze current `cozo-tui` command parsing and env bridge behavior.
@@ -11,54 +18,77 @@
 - [x] Produce long-form design and implementation plan document.
 - [x] Record chronological investigation diary with command evidence.
 
-## Phase 1: Glazed command foundation
+## Workstream A: command framework cutover
 
-- [ ] Create shared Cobra root and command registration package.
-- [ ] Implement Glazed command for TUI execution.
-- [ ] Implement Glazed command for plugin-run execution.
-- [ ] Add command settings and profile settings sections to both commands.
-- [ ] Preserve current behavior parity for required args and defaults.
+- [ ] Add a shared Cobra root and command registration package for cozo app binaries.
+- [ ] Implement `tui` command as Glazed command (no `flag` package).
+- [ ] Implement `plugin-run` command as Glazed command (no `flag` package).
+- [ ] Wire Glazed command settings section for config overlays and diagnostics.
+- [ ] Wire Glazed profile settings section for profile/profile-file selection.
+- [ ] Ensure command handlers decode typed settings structs via `DecodeSectionInto`.
 
-## Phase 2: Cozo middleware chain
+## Workstream B: app sections and typed settings
 
-- [ ] Implement cozo-specific middleware builder with bootstrap parse.
-- [ ] Parameterize app env prefix and app config path.
-- [ ] Support profile selection from flags/env/config through profile settings section.
-- [ ] Encode explicit precedence policy in code and comments.
-- [ ] Add precedence matrix tests (defaults/config/profiles/env/flags).
+- [ ] Create app section for runtime DB/seed fields.
+- [ ] Create app section for TUI runtime behavior (auto-migrate, script-root, etc).
+- [ ] Create app section for plugin-run behavior and IO fields.
+- [ ] Define typed settings structs with `glazed` tags for all app fields.
+- [ ] Define one aggregate runtime settings struct used by command execution paths.
 
-## Phase 3: Embeddings provider cutover
+## Workstream C: middleware bootstrap and precedence
 
-- [ ] Build embeddings provider from parsed values in command layer.
-- [ ] Inject provider into `geppettohost.Options.Embedding` for all runtime paths.
-- [ ] Remove runtime env fallback from provider construction path.
-- [ ] Replace manual Pinocchio file parsing in app runtime with middleware/profile-driven values.
+- [ ] Implement cozo-specific middleware builder with bootstrap parse for command settings.
+- [ ] Implement bootstrap parse for profile settings before profile middleware instantiation.
+- [ ] Resolve config file overlays in one place and reuse for bootstrap + main chain.
+- [ ] Insert profile middleware with registry-backed loading semantics.
+- [ ] Enforce precedence behavior: `flags > env > profiles > config > defaults`.
+- [ ] Add explicit comments in middleware builder describing reverse execution semantics.
 
-## Phase 4: Runtime env removal
+## Workstream D: embeddings provider cutover
 
-- [ ] Remove `COZO_TUI_AUTO_MIGRATE_VECTORS` env reads from F9 model.
-- [ ] Remove `COZO_TUI_SCRIPT_ROOT` env reads from F9 commands.
-- [ ] Pass explicit typed options into F9 constructor and host setup.
-- [ ] Pass explicit typed options/provider into seed embedding flow.
+- [ ] Construct embeddings provider from parsed values in command layer.
+- [ ] Inject provider into `geppettohost.Options.Embedding` in all call paths.
+- [ ] Remove env-based lazy provider fallback from `geppettohost` runtime path.
+- [ ] Remove manual Pinocchio YAML merge logic from app runtime package.
+- [ ] Keep dimension validation and provider error surfacing behavior intact.
 
-## Phase 5: Plugin-run hard cutover
+## Workstream E: TUI runtime env removal
 
-- [ ] Remove standard `flag` usage from plugin-run command.
-- [ ] Decode plugin-run settings struct from Glazed parsed values.
-- [ ] Keep engine options JSON parse behavior parity.
-- [ ] Add tests for required-field and parse-error behavior.
+- [ ] Remove `COZO_TUI_AUTO_MIGRATE_VECTORS` runtime read from F9 model.
+- [ ] Remove `COZO_TUI_SCRIPT_ROOT` runtime read from F9 commands.
+- [ ] Pass auto-migrate/script-root as typed options at constructor boundary.
+- [ ] Ensure seed and F9 use injected settings/provider only.
 
-## Phase 6: Cleanup and rollout
+## Workstream F: plugin-run command hard cutover
 
-- [ ] Remove obsolete env-bridge helpers and dead code.
-- [ ] Update Makefile and README invocation examples to new command surface.
-- [ ] Add migration guidance for operators.
-- [ ] Run full test suite and live seed smoke using parsed-values path.
-- [ ] Perform manual interactive TUI smoke in a real TTY session.
+- [ ] Replace current `cmd/cozo-plugin-run` flag parsing with Glazed command implementation.
+- [ ] Preserve required field checks (`script`, `transcript`) in decoded settings validation.
+- [ ] Preserve engine options JSON parse semantics and output format behavior.
+- [ ] Keep metadata wrapping and pretty output toggles under typed settings.
 
-## Documentation and delivery
+## Workstream G: delete legacy compatibility paths
 
-- [x] Relate key evidence files to design and diary docs.
+- [ ] Delete `applyEmbeddingCLIOverrides` env-bridge behavior from `cozo-tui` command path.
+- [ ] Delete legacy env-helper functions used only for configuration loading.
+- [ ] Delete obsolete docs/hints referring to `COZO_TUI_*` runtime-only configuration.
+- [ ] Remove dead tests that exist only to validate env bridge behavior.
+
+## Workstream H: validation and tests
+
+- [ ] Add middleware precedence tests covering defaults/config/profiles/env/flags.
+- [ ] Add bootstrap profile selection tests (profile from config/env/flag).
+- [ ] Add command decode tests for `tui` and `plugin-run` settings structs.
+- [ ] Add provider construction tests from parsed values (success + failure modes).
+- [ ] Run `go test ./... -count=1` in `cozo-extraction-tui`.
+- [ ] Run native-tagged vector path tests with `.deps` (`cozo_cgo`).
+- [ ] Run live seed smoke with real credentials through parsed-values path.
+- [ ] Run manual interactive TUI smoke in real TTY.
+
+## Workstream I: rollout docs and ticket hygiene
+
+- [ ] Update README and command help examples for Glazed-only invocation.
+- [ ] Add a short cutover note documenting that old env bridge is removed.
+- [ ] Relate final implementation files to CO-11 docs.
 - [ ] Keep changelog synchronized with phase milestones.
 - [x] Run `docmgr doctor --ticket CO-11 --stale-after 30` with clean result.
 - [x] Upload CO-11 bundle to reMarkable and verify remote listing.

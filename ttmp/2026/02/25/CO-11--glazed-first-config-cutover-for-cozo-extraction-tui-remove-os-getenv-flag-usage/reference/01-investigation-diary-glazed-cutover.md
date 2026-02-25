@@ -248,6 +248,27 @@ Results:
 2. Upload succeeded: `CO-11 Glazed Config Cutover Research.pdf`.
 3. Remote listing confirmed file presence under `/ai/2026/02/25/CO-11`.
 
+## Step 10: hard-cutover policy lock and task restructuring
+
+Prompt context:
+
+1. User requested the simplest path and explicitly confirmed hard cutover with no backwards compatibility.
+2. User then requested task creation aligned to that policy.
+
+Actions:
+
+1. Replaced the CO-11 task list with a hard-cutover implementation backlog.
+2. Added explicit locked decisions in tasks:
+   - no backwards compatibility,
+   - precedence fixed to `flags > env > profiles > config > defaults`,
+   - remove `flag` and runtime `os.Getenv` usage in scope.
+3. Updated index current-status and changelog to reflect policy lock.
+
+Outcome:
+
+1. Ticket now has implementation tasks that match the confirmed direction exactly.
+2. Remaining work is implementation-only; research phase is complete.
+
 ## Quick reference
 
 ### Immediate implementation guidance

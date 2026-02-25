@@ -35,7 +35,8 @@ CO-11 defines a hard cutover plan for replacing ad-hoc `flag` and `os.Getenv` us
 
 1. Deep analysis completed and documented.
 2. Implementation work not started in this ticket yet.
-3. Precedence and middleware behavior mapped from Geppetto source/tests.
+3. Precedence locked for this implementation pass: `flags > env > profiles > config > defaults` (simplest path).
+4. Hard cutover policy locked: no backwards compatibility.
 
 ## Key links
 
