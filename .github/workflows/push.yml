@@ -18,6 +18,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Guard removed legacy TUI paths
+        run: make guard-no-legacy-tui-paths
       -
         name: Run unit tests
         run: go test ./...
