@@ -38,17 +38,17 @@ A terminal-based interface (built with Bubbletea) for exploring the CozoDB entit
 
 ## Screens
 
-| # | Screen | Key | Purpose |
-|---|--------|-----|---------|
-| 1 | Dashboard | F1 | Entity counts, top relationships, recent events, sentiment |
-| 2 | People Browser | F2 | Filterable/sortable table of all persons with preview |
-| 3 | Relationship Explorer | F3 | All relationship records with temporal snapshots |
-| 4 | Relationship Evolution | -- | Drill-down: strength chart + diff for a single pair |
-| 5 | Network Graph | F5 | ASCII graph with community detection |
-| 6 | Timeline | F4 | Chronological feed interleaving events, rels, behaviors |
-| 7 | Query Console | F6 | CozoScript REPL with results table |
-| 8 | Extraction Monitor | F7 | Run JS extractors, preview + import results |
-| 9 | Vector Search | F8 | HNSW semantic search across all entity types |
+| # | Screen | Key | Status | Purpose |
+|---|--------|-----|--------|---------|
+| 1 | Dashboard | F1 | Done | Entity counts, top relationships, recent events, sentiment |
+| 2 | People Browser | F2 | Done | Filterable/sortable table of all persons with preview |
+| 3 | Relationship Explorer | F3 | Done | All relationship records with temporal snapshots |
+| 4 | Relationship Evolution | F4 | Done | Drill-down: ASCII strength chart for a single pair |
+| 5 | Network Graph | F5 | Done | ASCII circular graph with focus/depth controls |
+| 6 | Timeline | F6 | Done | Chronological feed interleaving events, rels, behaviors |
+| 7 | Query Console | F7 | Done | CozoScript REPL with results table and history |
+| 8 | Extraction Monitor | F8 | CO-05 | Run JS extractors, preview + import results |
+| 9 | Vector Search | F9 | CO-05 | HNSW semantic search across all entity types |
 
 ## Documents
 
@@ -67,4 +67,4 @@ A terminal-based interface (built with Bubbletea) for exploring the CozoDB entit
 
 ## Status
 
-Currently in **design phase**. ASCII mockups and model sketches complete. No code written yet.
+**7 of 9 screens implemented and working.** Screens F1-F7 are complete with sample data seeding. Remaining screens (F8 Extraction Monitor, F9 Vector Search) require infrastructure tracked in [CO-05](../CO-05--extraction-pipeline-and-vector-search-for-tui/index.md).
