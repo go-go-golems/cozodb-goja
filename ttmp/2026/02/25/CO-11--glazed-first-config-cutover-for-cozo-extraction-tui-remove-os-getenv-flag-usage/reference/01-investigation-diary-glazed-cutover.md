@@ -66,7 +66,7 @@ RelatedFiles:
       Note: Glazed-only invocation examples and hard-cutover note
 ExternalSources: []
 Summary: Chronological research diary for CO-11 covering discovery, evidence capture, architectural decisions, and delivery steps.
-LastUpdated: 2026-02-25T17:05:00-05:00
+LastUpdated: 2026-02-25T17:16:00-05:00
 WhatFor: Preserve command-level and middleware-level evidence supporting Glazed-first cutover planning.
 WhenToUse: Use when implementing CO-11 tasks or reviewing why the chosen migration architecture was selected.
 ---
@@ -551,13 +551,108 @@ if got := resolve("--field flag", "ENV=env", "profile=profile", "config=file", "
 
 ```bash
 # 1) verify parsed layers
-cozo tui --config-file ./config.yaml --print-parsed-fields
+go run -tags cozo_cgo ./cmd/cozo-tui --config-file ./config.yaml --print-parsed-fields --runtime-seed-only
 
 # 2) validate precedence edge cases
-COZO_TUI_EMBEDDINGS_ENGINE=env-engine cozo tui --config-file ./config.yaml --embeddings-engine flag-engine --print-parsed-fields
+COZO_TUI_EMBEDDINGS_ENGINE=env-engine go run -tags cozo_cgo ./cmd/cozo-tui --config-file ./config.yaml --embeddings-engine flag-engine --print-parsed-fields --runtime-seed-only
 
 # 3) run non-interactive seed smoke using typed settings path
-cozo tui --engine sqlite --db /tmp/cozo-glazed.db --seed --seed-only --embeddings-type openai --embeddings-engine text-embedding-3-small --embeddings-dimensions 384
+go run -tags cozo_cgo ./cmd/cozo-tui --runtime-engine sqlite --runtime-db /tmp/cozo-glazed.db --runtime-seed --runtime-seed-only --embeddings-type openai --embeddings-engine text-embedding-3-small --embeddings-dimensions 384
+```
+
+## Step 13: onboarding README refresh and run-target reliability
+
+I updated the tool-level README for new users so setup, first successful run, and troubleshooting are explicit. I also adjusted the default `make run-cgo-tui` target to avoid a failing `mem`-mode path that required immediate provider-backed seeding, which was a bad first-run experience.
+
+This step keeps CO-11 behavior unchanged at runtime architecture level but improves operator ergonomics and removes one practical onboarding footgun discovered during live usage.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, update the README of the tool to help new users get onboarded and get started. Also, is there any deprecated code or legacy code left? what can we still cleanup"
+
+**Assistant interpretation:** Improve onboarding docs in the tool repo and audit remaining legacy/deprecated surfaces for a cleanup plan.
+
+**Inferred user intent:** Make the project easier to adopt and identify the next polish pass after hard cutover.
+
+**Commit (code):** `d6ab6cb` — "cozo-tui: improve onboarding README and fix default run target"
+
+### What I did
+
+1. Rewrote `cozo-extraction-tui/README.md` with:
+   - prerequisites,
+   - five-minute onboarding flow,
+   - plugin-run fixture example,
+   - config/precedence summary,
+   - common failure modes and fixes.
+2. Updated `cozo-extraction-tui/Makefile`:
+   - `run-cgo-tui` now runs against sqlite DB path + profile/config overlays by default.
+3. Validated:
+   - `go test ./... -count=1`
+   - `make help`
+   - PTY smoke: `make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'` and quit with `q`.
+
+### Why
+
+1. The previous README was too thin for first-time setup.
+2. The previous default run target could fail immediately on missing provider creds.
+3. Onboarding docs should align with current Glazed-first hard-cutover behavior.
+
+### What worked
+
+1. New README maps cleanly to validated commands.
+2. Updated `run-cgo-tui` starts reliably when pointed at a seeded sqlite DB.
+3. Test suite stayed green.
+
+### What didn't work
+
+1. Prior default `run-cgo-tui` command (`--runtime-engine mem`) failed in this environment:
+   - `Error: build embeddings provider: no API key provided for OpenAI`
+2. Resolution:
+   - shifted default run target to sqlite DB path flow documented in README.
+
+### What I learned
+
+1. Operator defaults matter as much as architecture for adoption.
+2. Even after hard-cutover completion, docs/targets can still carry legacy assumptions from prior flow.
+
+### What was tricky to build
+
+1. Cause: default run target encoded an implicit assumption that embeddings provider config is always present.
+2. Symptoms: first command users are likely to run fails before they see UI.
+3. Approach:
+   - adjust run target defaults to sqlite DB path and profile/config overlays,
+   - validate with PTY launch and exit.
+4. Result: onboarding path is now consistent with current runtime behavior.
+
+### What warrants a second pair of eyes
+
+1. Whether Makefile variable names should be normalized away from `PINOCCHIO_*` wording for clearer app-local naming.
+2. Whether onboarding should include an explicit “no-credentials local mode” path with deterministic fake embeddings.
+
+### What should be done in the future
+
+1. Optionally add a `make doctor` target to verify toolchain, `.deps` lib, and profile paths in one command.
+2. Consider sanitizing `--print-parsed-fields` output or adding a redaction mode.
+
+### Code review instructions
+
+1. Review:
+   - `cozo-extraction-tui/README.md`
+   - `cozo-extraction-tui/Makefile`
+2. Validate:
+   - `go test ./... -count=1`
+   - `make help`
+   - `make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'`
+
+### Technical details
+
+Commands run in this step:
+
+```bash
+go test ./... -count=1
+make help
+make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'
+git commit -m "cozo-tui: improve onboarding README and fix default run target"
 ```
 
 ## What was tricky

@@ -20,7 +20,7 @@ RelatedFiles:
       Note: Reference implementation for bootstrap and middleware precedence
 ExternalSources: []
 Summary: Research and implementation planning ticket for migrating cozo-extraction-tui configuration to Glazed sections/middlewares with typed settings decode and no runtime os.Getenv calls.
-LastUpdated: 2026-02-25T17:06:00-05:00
+LastUpdated: 2026-02-25T17:16:00-05:00
 WhatFor: Define and track a hard cutover from flag/env-driven config to Glazed-first command and runtime wiring.
 WhenToUse: Use when implementing command/config refactors across cozo-tui, plugin-run, geppettohost, seed, and F9 vector search.
 ---

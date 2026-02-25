@@ -41,3 +41,10 @@
   - Real credentials seed-only run succeeds via parsed-values path:
     - `make run-cgo-seed-only-real SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'`
   - Manual interactive TUI smoke in real PTY completed and exited cleanly with `q`.
+- Implementation commit `d6ab6cb` in `2026-02-18--cozodb-extraction`:
+  - Reworked `cozo-extraction-tui/README.md` into an onboarding guide with prerequisites, fast-start flow, plugin-run fixture example, configuration model, and troubleshooting.
+  - Updated `Makefile` `run-cgo-tui` to default to sqlite DB path + profile/config overlays (instead of `mem` mode that forced immediate provider-backed seeding).
+  - Validation:
+    - `go test ./... -count=1` passes.
+    - `make help` reflects new target behavior.
+    - `make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'` starts and exits cleanly in PTY.
