@@ -89,7 +89,7 @@
 - [x] Run `gofmt` on F9 code changes
 - [x] Run module tests (`go test ./... -count=1`)
 - [ ] Verify F9 manual smoke in TUI
-  Blocked in current environment: non-tag run reports `cozocgo backend requires build tag cozo_cgo`; tagged builds currently fail linking against `github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a` (unresolved `cozo_*` symbols / malformed archive diagnostics).
+  Remaining in this session: `make run-cgo-tui` reaches DB open with `.deps` linking but cannot launch interactive UI due missing `/dev/tty` in non-interactive agent runtime.
 - [x] Update CO-09 changelog with progress details
 - [x] Relate key files with `docmgr doc relate`
 - [x] Run `docmgr doctor --ticket CO-09 --stale-after 30`

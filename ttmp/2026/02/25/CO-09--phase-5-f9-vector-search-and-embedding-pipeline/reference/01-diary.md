@@ -11,6 +11,8 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/Makefile
+      Note: Repeatable .deps-based cozo_cgo targets
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/embedder.go
       Note: Env-driven embedding provider configuration
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
@@ -24,23 +26,28 @@ RelatedFiles:
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/decoder.go
       Note: Result decoding into SearchRow view model
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/integration_cozo_cgo_test.go
-      Note: Tagged vector search integration test with seeded vectors and indices
+      Note: |-
+        Tagged vector search integration test with seeded vectors and indices
+        Updated native seeding to vec() script inserts
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/model.go
       Note: CO-09 F9 screen/control scaffold
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/model_test.go
       Note: Screen success and error path coverage
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/query_builder.go
-      Note: Mode-specific Cozo query templates and parameter bounds
+      Note: |-
+        Mode-specific Cozo query templates and parameter bounds
+        Fixed ModeAll union query for native parser
     - Path: ttmp/2026/02/25/CO-09--phase-5-f9-vector-search-and-embedding-pipeline/design/01-implementation-plan-phase-5-f9-vector-search-and-embeddings.md
       Note: Phase 5 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-09--phase-5-f9-vector-search-and-embedding-pipeline/tasks.md
       Note: Phase 5 task queue referenced by diary
 ExternalSources: []
 Summary: Implementation diary for CO-09
-LastUpdated: 2026-02-25T13:16:00-05:00
+LastUpdated: 2026-02-25T14:02:00-05:00
 WhatFor: Track phase 5 vector search and embedding implementation
 WhenToUse: Use when reviewing CO-09 execution progress
 ---
+
 
 
 
@@ -336,3 +343,70 @@ The attempt partially changed the failure signature but did not unblock executio
   - `go test -tags cozo_cgo ./internal/tui/screens/vsearch -count=1`
   - `go run -tags cozo_cgo ./cmd/cozo-tui --engine mem`
   - `nm -g --defined-only /home/manuel/go/pkg/mod/github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a`
+
+## Step 5: Add Repeatable `.deps` Build Targets and Revalidate Tagged Path
+
+This step added explicit Makefile targets in the relocated TUI project so native-tag runs always pick the workspace `.deps` Cozo static library instead of relying on module-cache defaults. The change was paired with a fix to the all-mode query template that surfaced once native parser execution became reproducible.
+
+After this, the tagged vsearch test target passes consistently with `.deps`. Interactive TUI smoke remains unverified only because this agent session has no `/dev/tty`.
+
+### Prompt Context
+
+**User prompt (verbatim):** "cool, add that to the makefile to make it easier to repeat. now try again."
+
+**Assistant interpretation:** Add durable build/test command wrappers that force `.deps` linking and rerun validation immediately.
+
+**Inferred user intent:** Remove manual linker setup friction and prove the `cozo_cgo` path works now.
+
+**Commit (code):** `cb28ba2` — "co-09: add .deps cgo make targets and fix native all-mode query"
+
+### What I did
+- Added `cozo-extraction-tui/Makefile` with:
+  - `make test`
+  - `make test-cgo-vsearch` (uses `CGO_LDFLAGS=-L../../cozodb-goja/.deps/cozo`)
+  - `make run-cgo-tui` (same linker path + `-tags cozo_cgo`)
+  - `make check-cozo-lib`.
+- Fixed `ModeAll` query template in `query_builder.go` from `*{...}` union form to parser-valid `( ... ) or ( ... )` branches for native Cozo parsing.
+- Updated native integration seed path in `integration_cozo_cgo_test.go` to `:put ... vec($v)` script writes (instead of `db.Import`) to preserve typed vector semantics.
+- Ran validation:
+  - `make test-cgo-vsearch` (passes)
+  - `make run-cgo-tui` (DB opens; then fails due no TTY in this environment).
+
+### Why
+- Needed a repeatable command path for local/CI use that always links against known-good `.deps` artifact.
+- Native parser failures exposed a genuine query-template issue masked by fake-backend tests.
+
+### What worked
+- `.deps`-based tagged test path now executes successfully.
+- Native parser now accepts all-mode query and returns valid results in integration test.
+
+### What didn't work
+- Full manual TUI smoke in this agent shell is still blocked by terminal device availability:
+  - `error: could not open a new TTY: open /dev/tty: no such device or address`.
+
+### What I learned
+- For vector-typed columns, script-level `:put ... vec($v)` is more reliable than generic import payloads in native integration tests.
+- Parser-validity of complex union templates must be validated against real Cozo backend, not only fake backend.
+
+### What was tricky to build
+- Diagnosing the next true blocker required separating linker-path failures from parser errors and then from runtime TTY constraints.
+
+### What warrants a second pair of eyes
+- Whether to also add a `make test-cgo-all` target once broader `cozo_cgo` suites are unblocked by environment tooling.
+
+### What should be done in the future
+- Run `make run-cgo-tui` in an interactive terminal session to close final manual-smoke checkbox.
+
+### Code review instructions
+- Review:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/Makefile`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/query_builder.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/integration_cozo_cgo_test.go`
+- Validate:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `make test-cgo-vsearch`
+  - `make run-cgo-tui` (interactive terminal required)
+
+### Technical details
+- Default library path used by Makefile:
+  - `../../cozodb-goja/.deps/cozo/libcozo_c.a`
