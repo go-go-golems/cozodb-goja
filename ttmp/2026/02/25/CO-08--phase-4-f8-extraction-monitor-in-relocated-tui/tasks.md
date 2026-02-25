@@ -34,15 +34,15 @@
 
 ## Workstream D: Async Extraction Run Flow
 
-- [ ] Add `pluginRunStartedMsg`
-- [ ] Add `pluginRunSuccessMsg`
-- [ ] Add `pluginRunErrorMsg`
-- [ ] Implement `runPluginCmd` with runtime host integration
-- [ ] Add run-state guard to prevent concurrent runs
-- [ ] Add status updates for running/success/failure
-- [ ] Store `lastInput` and `lastResult` on success
-- [ ] Preserve prior result on failed rerun
-- [ ] Implement key binding `r` to trigger run
+- [x] Add `pluginRunStartedMsg`
+- [x] Add `pluginRunSuccessMsg`
+- [x] Add `pluginRunErrorMsg`
+- [x] Implement `runPluginCmd` with runtime host integration
+- [x] Add run-state guard to prevent concurrent runs
+- [x] Add status updates for running/success/failure
+- [x] Store `lastInput` and `lastResult` on success
+- [x] Preserve prior result on failed rerun
+- [x] Implement key binding `r` to trigger run
 
 ## Workstream E: Result Preview UX
 

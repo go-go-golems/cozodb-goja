@@ -22,6 +22,7 @@ RelatedFiles:
         CO-08 Workstream A extraction screen scaffold
         Workstream B plugin discovery and overlay implementation
         Workstream C input modes and transcript validation flow
+        Workstream D async run lifecycle and state retention
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -32,6 +33,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
 
 
 
@@ -289,3 +291,72 @@ The run action is still scaffolded, but now enforces transcript readability/non-
 
 ### Technical details
 - File transcript loading uses `os.ReadFile` and strict `strings.TrimSpace` emptiness checks.
+
+## Step 5: Add Async Run Message Flow and Runtime Host Execution (Workstream D)
+
+This step wires the first real extraction execution path in F8. The screen now emits start/success/error messages around plugin execution, guards concurrent runs, and persists successful run state.
+
+Importantly, failed reruns do not overwrite the prior successful result, so operators can still inspect/export the last known-good payload.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue implementation workstream-by-workstream and keep diary/changelog synchronized.
+
+**Inferred user intent:** Move from static scaffold to executable extraction flow without regressions.
+
+**Commit (code):** `c9d1e13` — "co-08: add async plugin run message flow scaffold"
+
+### What I did
+- Added run lifecycle messages in extraction model:
+  - `pluginRunStartedMsg`
+  - `pluginRunSuccessMsg`
+  - `pluginRunErrorMsg`
+- Added `runPluginCmd(...)` command:
+  - creates runtime host with plugin script root
+  - executes selected plugin via `host.RunExtractorScript`
+  - returns success/error messages with payload metadata
+- Added run-state guard:
+  - ignores `r` while already running
+- Added status transitions for running/success/failure.
+- Added run output retention fields:
+  - `lastInput`
+  - `lastResult`
+  - `lastRunErr`
+- Ensured failed run preserves existing `lastResult`.
+- Updated UI summary to show running state and result summary.
+- Re-ran module validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream D is the execution backbone required before preview/import/export features can become meaningful.
+
+### What worked
+- Run lifecycle is now message-driven and non-blocking at screen level.
+- Guard and retention behavior compile and execute in test runs.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Explicit lifecycle messages simplify future testing and make failure semantics straightforward in `Update`.
+
+### What was tricky to build
+- Keeping run command generic enough for current scaffold while preserving hooks for richer run options later (prompt/profile/engine config).
+
+### What warrants a second pair of eyes
+- Script-root and runtime options in `runPluginCmd` should be reviewed before productionizing plugin execution defaults.
+
+### What should be done in the future
+- Implement Workstream E/F next so successful runs feed structured preview/import validation state rather than status-only summaries.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Run command currently uses default timeout `120000ms` and records run completion timestamp for status reporting.
