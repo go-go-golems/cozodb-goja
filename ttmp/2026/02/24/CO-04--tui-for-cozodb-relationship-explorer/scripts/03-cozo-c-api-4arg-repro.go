@@ -1,8 +1,12 @@
+//go:build ignore
+// +build ignore
+
 // Direct C-API repro that uses the 4-argument cozo_run_query signature.
 //
 // Usage:
-//   CGO_LDFLAGS="-L$PWD/.deps/cozo" GOWORK=off go run -tags cozo_cgo \
-//     ./ttmp/2026/02/24/CO-04--tui-for-cozodb-relationship-explorer/scripts/03-cozo-c-api-4arg-repro.go
+//
+//	CGO_LDFLAGS="-L$PWD/.deps/cozo" GOWORK=off go run -tags cozo_cgo \
+//	  ./ttmp/2026/02/24/CO-04--tui-for-cozodb-relationship-explorer/scripts/03-cozo-c-api-4arg-repro.go
 package main
 
 import (
