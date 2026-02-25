@@ -11,6 +11,12 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
+      Note: F9 routing integration
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model_parity_test.go
+      Note: F9 hotkey parity coverage
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/model.go
+      Note: CO-09 F9 screen/control scaffold
     - Path: ttmp/2026/02/25/CO-09--phase-5-f9-vector-search-and-embedding-pipeline/design/01-implementation-plan-phase-5-f9-vector-search-and-embeddings.md
       Note: Phase 5 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-09--phase-5-f9-vector-search-and-embedding-pipeline/tasks.md
@@ -21,6 +27,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 5 vector search and embedding implementation
 WhenToUse: Use when reviewing CO-09 execution progress
 ---
+
 
 
 # Diary
@@ -73,3 +80,72 @@ CO-09 work has not started yet because active implementation is currently in CO-
 
 ### Technical details
 - Sequencing note: CO-09 depends on runtime and monitor paths from prior phases.
+
+## Step 2: Scaffold F9 Screen and Control State (Workstreams A-B)
+
+This step starts CO-09 by wiring F9 into the app router and adding a dedicated `vsearch` screen scaffold with core controls. The implementation establishes the structural shell for later embedding/query execution workstreams.
+
+The screen currently supports query input and parameter controls (`mode`, `k`, `ef`, `limit`) with reset behavior and status updates.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Begin CO-09 implementation with router/screen/control groundwork before embedding/query execution.
+
+**Inferred user intent:** Progress phase 5 in a staged, reviewable sequence.
+
+**Commit (code):** `1aeafe4` — "co-09: scaffold F9 vector search screen and controls"
+
+### What I did
+- Added new screen package:
+  - `internal/tui/screens/vsearch/model.go`
+- Added app router integration:
+  - F9 enum entry
+  - `f9` key route in update loop
+  - F9 tab label in status bar
+  - resize propagation and view/update branches
+- Added initial F9 controls:
+  - query text input component
+  - mode selector state (`all/person/relationship/behavior/event`)
+  - `k`, `ef`, and `limit` state defaults
+  - mode cycle binding (`m`)
+  - `k` inc/dec bindings (`+`/`-`)
+  - `ef` inc/dec bindings (`[`/`]`)
+  - reset binding (`c`)
+- Extended app parity hotkey test to include F9.
+- Ran validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstreams A-B are prerequisites for embedding integration and query execution in later CO-09 tasks.
+
+### What worked
+- F9 routing compiles and hotkey parity test passes.
+- Control state and key bindings are active in the scaffold screen.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Reusing the staged pattern from CO-08 (route first, then behavior) keeps integration risks low.
+
+### What was tricky to build
+- Maintaining app-router consistency across enum, tab strip, resize fanout, and view/update dispatch for an additional function-key screen.
+
+### What warrants a second pair of eyes
+- Keybinding choices for control tuning may be revised once full query execution and result navigation are in place.
+
+### What should be done in the future
+- Implement Workstream C embedding integration and Workstream D query execution templates.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/vsearch/model.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Initial F9 visual label in status bar: `[F9]VSearch`.

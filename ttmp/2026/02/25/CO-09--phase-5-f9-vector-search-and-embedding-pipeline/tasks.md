@@ -2,24 +2,24 @@
 
 ## Workstream A: Screen Scaffold and Router Wiring
 
-- [ ] Create `internal/tui/screens/vsearch/model.go`
-- [ ] Add F9 enum entry in app router
-- [ ] Add `f9` key routing in app update loop
-- [ ] Add F9 tab in status bar
-- [ ] Add F9 resize handling in app model
-- [ ] Add F9 view routing branch
+- [x] Create `internal/tui/screens/vsearch/model.go`
+- [x] Add F9 enum entry in app router
+- [x] Add `f9` key routing in app update loop
+- [x] Add F9 tab in status bar
+- [x] Add F9 resize handling in app model
+- [x] Add F9 view routing branch
 
 ## Workstream B: Input and Control Components
 
-- [ ] Add query text input component
-- [ ] Add mode selector state (`all/person/relationship/behavior/event`)
-- [ ] Add `k` control state with defaults
-- [ ] Add `ef` control state with defaults
-- [ ] Add `limit` state with defaults
-- [ ] Add mode cycle key binding
-- [ ] Add `k` increment/decrement bindings
-- [ ] Add `ef` increment/decrement bindings
-- [ ] Add clear/reset key binding
+- [x] Add query text input component
+- [x] Add mode selector state (`all/person/relationship/behavior/event`)
+- [x] Add `k` control state with defaults
+- [x] Add `ef` control state with defaults
+- [x] Add `limit` state with defaults
+- [x] Add mode cycle key binding
+- [x] Add `k` increment/decrement bindings
+- [x] Add `ef` increment/decrement bindings
+- [x] Add clear/reset key binding
 
 ## Workstream C: Embedding Service Integration
 
