@@ -56,13 +56,13 @@
 
 ## Workstream F: Import Preview and Validation
 
-- [ ] Create `ImportPreview` struct
-- [ ] Implement count aggregation by group
-- [ ] Detect missing mandatory fields per group
-- [ ] Detect duplicate keys inside extraction payload
-- [ ] Compute `canImport` decision flag
-- [ ] Render import preview block in UI
-- [ ] Disable import key when preview has critical errors
+- [x] Create `ImportPreview` struct
+- [x] Implement count aggregation by group
+- [x] Detect missing mandatory fields per group
+- [x] Detect duplicate keys inside extraction payload
+- [x] Compute `canImport` decision flag
+- [x] Render import preview block in UI
+- [x] Disable import key when preview has critical errors
 
 ## Workstream G: Import Execution Path
 

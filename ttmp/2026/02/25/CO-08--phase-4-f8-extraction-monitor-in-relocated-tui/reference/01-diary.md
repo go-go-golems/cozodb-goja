@@ -24,6 +24,7 @@ RelatedFiles:
         Workstream C input modes and transcript validation flow
         Workstream D async run lifecycle and state retention
         Workstream E preview grouping and cursor/detail UX
+        Workstream F import preview validation and gating
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -34,6 +35,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
 
 
 
@@ -435,3 +437,70 @@ The preview logic is defensive against missing or malformed payload shapes and h
   - `relationships`
   - `behaviors`
   - `events`
+
+## Step 7: Add Import Preview Validation and Import Gating (Workstream F)
+
+This step introduces import-readiness analysis on top of extraction output. The screen now computes an `ImportPreview` structure containing per-group counts, missing-field diagnostics, duplicate-key diagnostics, and a derived `canImport` flag.
+
+The `i` action now respects this gate, blocking import requests when critical validation issues exist.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue implementing remaining CO-08 tasks with incremental commits and diary updates.
+
+**Inferred user intent:** Ensure import flow is safety-checked before write-path implementation.
+
+**Commit (code):** `8ae63a5` — "co-08: add import preview validation and gating"
+
+### What I did
+- Added `ImportPreview` struct with:
+  - `Counts`
+  - `Missing`
+  - `Duplicates`
+  - `CanImport`
+- Added `buildImportPreview(...)` helper to compute:
+  - group counts (`persons`, `relationships`, `behaviors`, `events`)
+  - required-field misses
+  - duplicate key detection
+  - final import decision flag
+- Added UI rendering block for import preview diagnostics.
+- Updated `i` key behavior:
+  - blocks when no result is present
+  - blocks when `CanImport` is false
+  - only allows next-step import trigger when preview is clean
+- Re-ran validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream F is the safety layer required before import execution is wired.
+
+### What worked
+- Import readiness is now explicit and visible in the screen.
+- Gating behavior prevents unsafe import trigger states.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Reusing preview-group normalization for import validation avoids duplicate parsing paths.
+
+### What was tricky to build
+- Designing duplicate-key heuristics that are useful without full relation-level key normalization required pragmatic defaults (id/timestamp combinations where applicable).
+
+### What warrants a second pair of eyes
+- Required-field and duplicate-key rules should be reviewed against final extraction payload contract and import semantics.
+
+### What should be done in the future
+- Implement Workstream G importer execution path so `CanImport` gates a real DB write flow.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Import gating currently treats empty extraction payload as non-importable (`CanImport=false`).
