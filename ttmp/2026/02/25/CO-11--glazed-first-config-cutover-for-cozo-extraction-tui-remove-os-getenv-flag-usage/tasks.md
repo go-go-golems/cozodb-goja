@@ -20,58 +20,58 @@
 
 ## Workstream A: command framework cutover
 
-- [ ] Add a shared Cobra root and command registration package for cozo app binaries.
-- [ ] Implement `tui` command as Glazed command (no `flag` package).
-- [ ] Implement `plugin-run` command as Glazed command (no `flag` package).
-- [ ] Wire Glazed command settings section for config overlays and diagnostics.
-- [ ] Wire Glazed profile settings section for profile/profile-file selection.
-- [ ] Ensure command handlers decode typed settings structs via `DecodeSectionInto`.
+- [x] Add a shared Cobra root and command registration package for cozo app binaries.
+- [x] Implement `tui` command as Glazed command (no `flag` package).
+- [x] Implement `plugin-run` command as Glazed command (no `flag` package).
+- [x] Wire Glazed command settings section for config overlays and diagnostics.
+- [x] Wire Glazed profile settings section for profile/profile-file selection.
+- [x] Ensure command handlers decode typed settings structs via `DecodeSectionInto`.
 
 ## Workstream B: app sections and typed settings
 
-- [ ] Create app section for runtime DB/seed fields.
-- [ ] Create app section for TUI runtime behavior (auto-migrate, script-root, etc).
-- [ ] Create app section for plugin-run behavior and IO fields.
-- [ ] Define typed settings structs with `glazed` tags for all app fields.
+- [x] Create app section for runtime DB/seed fields.
+- [x] Create app section for TUI runtime behavior (auto-migrate, script-root, etc).
+- [x] Create app section for plugin-run behavior and IO fields.
+- [x] Define typed settings structs with `glazed` tags for all app fields.
 - [ ] Define one aggregate runtime settings struct used by command execution paths.
 
 ## Workstream C: middleware bootstrap and precedence
 
-- [ ] Implement cozo-specific middleware builder with bootstrap parse for command settings.
-- [ ] Implement bootstrap parse for profile settings before profile middleware instantiation.
-- [ ] Resolve config file overlays in one place and reuse for bootstrap + main chain.
-- [ ] Insert profile middleware with registry-backed loading semantics.
-- [ ] Enforce precedence behavior: `flags > env > profiles > config > defaults`.
-- [ ] Add explicit comments in middleware builder describing reverse execution semantics.
+- [x] Implement cozo-specific middleware builder with bootstrap parse for command settings.
+- [x] Implement bootstrap parse for profile settings before profile middleware instantiation.
+- [x] Resolve config file overlays in one place and reuse for bootstrap + main chain.
+- [x] Insert profile middleware with registry-backed loading semantics.
+- [x] Enforce precedence behavior: `flags > env > profiles > config > defaults`.
+- [x] Add explicit comments in middleware builder describing reverse execution semantics.
 
 ## Workstream D: embeddings provider cutover
 
-- [ ] Construct embeddings provider from parsed values in command layer.
-- [ ] Inject provider into `geppettohost.Options.Embedding` in all call paths.
-- [ ] Remove env-based lazy provider fallback from `geppettohost` runtime path.
-- [ ] Remove manual Pinocchio YAML merge logic from app runtime package.
-- [ ] Keep dimension validation and provider error surfacing behavior intact.
+- [x] Construct embeddings provider from parsed values in command layer.
+- [x] Inject provider into `geppettohost.Options.Embedding` in all call paths.
+- [x] Remove env-based lazy provider fallback from `geppettohost` runtime path.
+- [x] Remove manual Pinocchio YAML merge logic from app runtime package.
+- [x] Keep dimension validation and provider error surfacing behavior intact.
 
 ## Workstream E: TUI runtime env removal
 
-- [ ] Remove `COZO_TUI_AUTO_MIGRATE_VECTORS` runtime read from F9 model.
-- [ ] Remove `COZO_TUI_SCRIPT_ROOT` runtime read from F9 commands.
-- [ ] Pass auto-migrate/script-root as typed options at constructor boundary.
-- [ ] Ensure seed and F9 use injected settings/provider only.
+- [x] Remove `COZO_TUI_AUTO_MIGRATE_VECTORS` runtime read from F9 model.
+- [x] Remove `COZO_TUI_SCRIPT_ROOT` runtime read from F9 commands.
+- [x] Pass auto-migrate/script-root as typed options at constructor boundary.
+- [x] Ensure seed and F9 use injected settings/provider only.
 
 ## Workstream F: plugin-run command hard cutover
 
-- [ ] Replace current `cmd/cozo-plugin-run` flag parsing with Glazed command implementation.
-- [ ] Preserve required field checks (`script`, `transcript`) in decoded settings validation.
-- [ ] Preserve engine options JSON parse semantics and output format behavior.
-- [ ] Keep metadata wrapping and pretty output toggles under typed settings.
+- [x] Replace current `cmd/cozo-plugin-run` flag parsing with Glazed command implementation.
+- [x] Preserve required field checks (`script`, `transcript`) in decoded settings validation.
+- [x] Preserve engine options JSON parse semantics and output format behavior.
+- [x] Keep metadata wrapping and pretty output toggles under typed settings.
 
 ## Workstream G: delete legacy compatibility paths
 
-- [ ] Delete `applyEmbeddingCLIOverrides` env-bridge behavior from `cozo-tui` command path.
-- [ ] Delete legacy env-helper functions used only for configuration loading.
+- [x] Delete `applyEmbeddingCLIOverrides` env-bridge behavior from `cozo-tui` command path.
+- [x] Delete legacy env-helper functions used only for configuration loading.
 - [ ] Delete obsolete docs/hints referring to `COZO_TUI_*` runtime-only configuration.
-- [ ] Remove dead tests that exist only to validate env bridge behavior.
+- [x] Remove dead tests that exist only to validate env bridge behavior.
 
 ## Workstream H: validation and tests
 
@@ -79,7 +79,7 @@
 - [ ] Add bootstrap profile selection tests (profile from config/env/flag).
 - [ ] Add command decode tests for `tui` and `plugin-run` settings structs.
 - [ ] Add provider construction tests from parsed values (success + failure modes).
-- [ ] Run `go test ./... -count=1` in `cozo-extraction-tui`.
+- [x] Run `go test ./... -count=1` in `cozo-extraction-tui`.
 - [ ] Run native-tagged vector path tests with `.deps` (`cozo_cgo`).
 - [ ] Run live seed smoke with real credentials through parsed-values path.
 - [ ] Run manual interactive TUI smoke in real TTY.

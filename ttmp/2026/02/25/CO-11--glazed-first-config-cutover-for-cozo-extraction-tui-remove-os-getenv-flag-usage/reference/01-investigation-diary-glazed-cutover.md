@@ -269,6 +269,129 @@ Outcome:
 1. Ticket now has implementation tasks that match the confirmed direction exactly.
 2. Remaining work is implementation-only; research phase is complete.
 
+## Step 11: implementation slice 1 (command/runtime hard cutover)
+
+I executed the first implementation slice directly in `2026-02-18--cozodb-extraction/cozo-extraction-tui` and committed it as one coherent runtime cutover unit. The scope was to move command entrypoints to Glazed, remove non-test runtime env lookups in the cutover surface, and force embedding provider injection instead of lazy env fallback.
+
+This step intentionally prioritized “code compiles + tests green” before adding new precedence/decode tests and docs updates, so subsequent slices can focus on validation depth and operator-facing documentation without mixing structural migration changes.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, now implement it , task by task, committing as you go, keeping a diary"
+
+**Assistant interpretation:** Implement CO-11 in incremental commits, update task checkboxes, and keep a detailed ticket diary with command/test evidence.
+
+**Inferred user intent:** Complete the hard-cutover migration with auditable progress and no hidden partial work.
+
+**Commit (code):** `96cc0b9` — "cozo-tui: cut over to glazed commands and injected embed providers"
+
+### What I did
+
+1. Added Glazed command implementations:
+   - `internal/commands/tui.go`
+   - `internal/commands/plugin_run.go`
+2. Added app config package:
+   - `internal/config/settings.go`
+   - `internal/config/middlewares.go`
+   - `internal/config/embeddings.go`
+3. Replaced entrypoint `flag` parsing with Glazed/Cobra execution:
+   - `cmd/cozo-tui/main.go`
+   - `cmd/cozo-plugin-run/main.go`
+4. Added explicit option plumbing:
+   - `internal/tui/app/model.go` (`NewWithOptions`)
+   - `internal/tui/screens/vsearch/model.go` (`Options`, `NewWithOptions`)
+5. Removed runtime env fallback for embeddings:
+   - `internal/geppettohost/host.go` (`ensureEmbedder` now returns unavailable if missing provider)
+   - `internal/geppettohost/embedder.go` reduced to `embedGlobals` only
+6. Switched seed path to explicit embedding provider injection:
+   - `internal/tui/seeddata/seed.go` (`Options{EmbeddingProvider ...}`)
+   - updated callsites/tests in `internal/tui/testutil/db.go` and `internal/tui/seeddata/seed_live_cozo_cgo_test.go`
+7. Removed stale env-bridge test coverage:
+   - deleted `cmd/cozo-tui/main_test.go`
+   - replaced `internal/geppettohost/embedder_test.go` with tests that match new behavior
+8. Fixed compile/test fallout and validated:
+   - `go test ./... -count=1` in `cozo-extraction-tui` passed.
+
+### Why
+
+1. Hard cutover requires deleting compatibility behaviors, not layering shims.
+2. Embedding provider ownership must be command-boundary/parsed-values driven for deterministic config semantics.
+3. F9 and seed needed constructor-level inputs so runtime code stops reading process env in non-test paths.
+
+### What worked
+
+1. New command layer cleanly decodes typed settings sections and executes without `flag`.
+2. Removing env fallback in host surfaced missing provider paths explicitly and did not break unit tests after targeted updates.
+3. App/vsearch option plumbing removed F9 env dependencies while keeping behavior intact.
+4. Full non-tagged test suite passed after updates.
+
+### What didn't work
+
+1. First `go test ./... -count=1` failed with compile errors:
+   - `undefined: app.NewWithOptions`
+   - `undefined: app.Options`
+   - `undefined: vsearch.Options`
+2. Stale geppettohost tests failed because removed symbols no longer existed:
+   - `undefined: loadPinocchioEmbeddingsConfig`
+   - `undefined: defaultEmbeddingProviderFromEnv`
+   - `undefined: applyEmbeddingEnvOverrides`
+3. Resolution:
+   - Added app/vsearch options APIs and rewired callers.
+   - Replaced old env-centric tests with behavior-valid tests for current API.
+
+### What I learned
+
+1. The migration boundary is cleanest when all embedding construction remains in command/config layer and runtime receives fully built dependencies.
+2. F9 model defaults were tightly coupled to env toggles; option constructors are the least invasive replacement.
+3. Keeping one large structural commit for this slice was practical because compile failures were all directly caused by the same architectural move.
+
+### What was tricky to build
+
+1. Cause: `internal/commands/tui.go` was written against APIs that did not exist yet (`app.NewWithOptions`, `vsearch.Options`).
+2. Symptoms: immediate build failure on command package and both binaries.
+3. Approach:
+   - Added app-level options wrapper.
+   - Added vsearch options struct + constructor.
+   - Replaced env-dependent default embed logic with options-driven host construction.
+4. Result: compile restored and tests green.
+
+### What warrants a second pair of eyes
+
+1. Middleware ordering in `internal/config/middlewares.go` should be reviewed against expected reverse execution semantics.
+2. Plugin-run setting names/prefixes should be validated against intended CLI UX (prefixed vs non-prefixed flags).
+3. Seed “needs provider” decision for mem/seed modes should be rechecked for desired product behavior.
+
+### What should be done in the future
+
+1. Add explicit precedence and profile-bootstrap tests (next CO-11 slice).
+2. Update Makefile/README/help examples to Glazed-prefixed flags.
+3. Run tagged/live/manual smoke checks after `.deps`/credential setup verification.
+
+### Code review instructions
+
+1. Start in command boundary:
+   - `cozo-extraction-tui/internal/commands/tui.go`
+   - `cozo-extraction-tui/internal/commands/plugin_run.go`
+2. Then inspect config chain:
+   - `cozo-extraction-tui/internal/config/settings.go`
+   - `cozo-extraction-tui/internal/config/middlewares.go`
+3. Then runtime dependency injection:
+   - `cozo-extraction-tui/internal/geppettohost/host.go`
+   - `cozo-extraction-tui/internal/tui/seeddata/seed.go`
+   - `cozo-extraction-tui/internal/tui/screens/vsearch/model.go`
+   - `cozo-extraction-tui/internal/tui/screens/vsearch/commands.go`
+4. Validate with:
+   - `go test ./... -count=1`
+
+### Technical details
+
+Commands run in this step:
+
+```bash
+go test ./... -count=1
+git commit -m "cozo-tui: cut over to glazed commands and injected embed providers"
+```
+
 ## Quick reference
 
 ### Immediate implementation guidance

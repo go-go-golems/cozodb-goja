@@ -19,3 +19,11 @@
   - Uploaded `CO-11 Glazed Config Cutover Research.pdf`.
   - Verified remote listing via `remarquee cloud ls /ai/2026/02/25/CO-11 --long --non-interactive`.
 - Locked implementation policy from user direction: simplest path, hard cutover, no backwards compatibility, precedence fixed to `flags > env > profiles > config > defaults` for this iteration.
+- Implementation commit `96cc0b9` in `2026-02-18--cozodb-extraction`:
+  - Added Glazed command package for `cozo-tui` and `cozo-plugin-run` entrypoints.
+  - Added app config sections and custom middleware bootstrap chain.
+  - Removed non-test runtime `os.Getenv` usage in F9 paths.
+  - Switched seed/F9 embedding flow to explicit parsed-values provider injection.
+  - Removed env-based lazy embedding provider fallback from `geppettohost`.
+  - Replaced stale env-bridge tests and removed obsolete `cmd/cozo-tui/main_test.go`.
+  - Validation passed: `go test ./... -count=1` in `cozo-extraction-tui`.
