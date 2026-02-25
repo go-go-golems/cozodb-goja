@@ -12,15 +12,15 @@
 
 ## Workstream B: Plugin Discovery and Selection UX
 
-- [ ] Add plugin discovery command on screen init
-- [ ] Load plugin descriptors from configured plugin directory
-- [ ] Sort descriptors deterministically
-- [ ] Add plugin overlay list model
-- [ ] Add plugin metadata detail pane
-- [ ] Add empty-state messaging when no plugins found
-- [ ] Add invalid-plugin diagnostics display
-- [ ] Implement key binding `p` for overlay toggle
-- [ ] Implement plugin selection update events
+- [x] Add plugin discovery command on screen init
+- [x] Load plugin descriptors from configured plugin directory
+- [x] Sort descriptors deterministically
+- [x] Add plugin overlay list model
+- [x] Add plugin metadata detail pane
+- [x] Add empty-state messaging when no plugins found
+- [x] Add invalid-plugin diagnostics display
+- [x] Implement key binding `p` for overlay toggle
+- [x] Implement plugin selection update events
 
 ## Workstream C: Transcript Input UX
 

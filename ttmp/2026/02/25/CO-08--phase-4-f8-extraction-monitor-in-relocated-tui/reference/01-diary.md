@@ -11,12 +11,16 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
+      Note: Descriptor loading helper for discovery
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
       Note: F8 routing and tab integration
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model_parity_test.go
       Note: F8 hotkey parity assertion
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go
-      Note: CO-08 Workstream A extraction screen scaffold
+      Note: |-
+        CO-08 Workstream A extraction screen scaffold
+        Workstream B plugin discovery and overlay implementation
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -27,6 +31,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
 
 
 
@@ -147,3 +152,75 @@ The scaffold intentionally returns placeholder status text for planned key inter
 ### Technical details
 - Added tab label in status bar: `[F8]Extract`.
 - Extraction screen currently uses status messages to acknowledge planned key actions without side effects.
+
+## Step 3: Implement Plugin Discovery and Overlay Selection Scaffold (Workstream B)
+
+This step implemented the plugin discovery and selector UX foundation inside the F8 extraction screen. It discovers JS descriptor modules on screen init, validates descriptors through the host runtime, and renders an overlay with list/detail panes plus invalid-plugin diagnostics.
+
+The implementation is intentionally scoped to discovery/selection state only; run/import behaviors remain for later workstreams.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue CO-08 tasks in sequence, committing each cohesive workstream slice.
+
+**Inferred user intent:** Deliver phase functionality incrementally with clear evidence and changelog traceability.
+
+**Commit (code):** `7487462` — "co-08: add plugin discovery and overlay selection scaffold"
+
+### What I did
+- Extended extraction screen model with plugin state:
+  - discovered items, invalid diagnostics, overlay toggle, selected index, loading flags.
+- Added async discovery command on `Init()`:
+  - scans configured plugin directory (`./scripts`)
+  - skips `lib/`, `fixtures/`, `node_modules/`
+  - attempts descriptor load/validation for each `.js` candidate
+  - sorts valid descriptors deterministically by `id` then path
+- Added selector message flow:
+  - `pluginsLoadedMsg`
+  - `pluginSelectedMsg`
+- Implemented overlay UX:
+  - key binding `p` to open/close
+  - `j/k` + arrows for cursor movement
+  - `enter` to emit selection update event
+  - detail pane showing id/name/kind/api/path for selected descriptor
+- Added empty-state and invalid-plugin diagnostic rendering.
+- Added host helper in `internal/geppettohost/host.go`:
+  - `LoadDescriptor(scriptPath)` to require module and decode descriptor metadata.
+- Ran validation:
+  - `go test ./... -count=1` from `cozo-extraction-tui`.
+
+### Why
+- Workstream B requires plugin discovery and selection primitives before transcript/run/import flows can be connected.
+
+### What worked
+- Descriptor discovery path compiles and is wired into screen init.
+- Overlay interaction state transitions are implemented.
+- Invalid descriptors are reported without crashing the screen.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Reusing host runtime for descriptor decode keeps contract checks consistent with run-time execution path.
+
+### What was tricky to build
+- Discovery needed explicit directory pruning to avoid treating support libraries (`scripts/lib`) as plugin descriptors.
+
+### What warrants a second pair of eyes
+- Plugin-directory policy (`./scripts` default and skipped subdirs) should be confirmed against expected operator workflow.
+
+### What should be done in the future
+- Implement Workstream C transcript-source state and Workstream D run messages so selected plugin can actually execute.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Discovery path uses `filepath.WalkDir` with directory skip list and descriptor decode via `plugins.DecodeDescriptorMeta`.
