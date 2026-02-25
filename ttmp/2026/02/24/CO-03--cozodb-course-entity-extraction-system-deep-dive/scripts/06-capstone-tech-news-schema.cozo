@@ -1,0 +1,84 @@
+# =============================================================================
+# Capstone: Tech News Knowledge Graph Schema
+# =============================================================================
+# Run each block separately. This creates the full capstone schema.
+
+# --- Companies ---
+:create company {
+    id: String
+    =>
+    name: String,
+    industry: String,
+    hq_city: String?,
+    founded_year: Int?,
+    description: String,
+    embedding: <F32; 384>
+}
+
+# --- People ---
+# :create person {
+#     id: String
+#     =>
+#     name: String,
+#     title: String?,
+#     company_id: String?,
+#     description: String,
+#     embedding: <F32; 384>
+# }
+
+# --- Products ---
+# :create product {
+#     id: String
+#     =>
+#     name: String,
+#     company_id: String,
+#     category: String,
+#     launch_date: String?,
+#     description: String,
+#     embedding: <F32; 384>
+# }
+
+# --- Partnerships (temporal composite key) ---
+# :create partnership {
+#     company_a: String,
+#     company_b: String,
+#     timestamp: String
+#     =>
+#     partnership_type: String,
+#     description: String,
+#     value_usd: Float?,
+#     sentiment: String,
+#     embedding: <F32; 384>
+# }
+
+# --- Funding Rounds (temporal composite key) ---
+# :create funding {
+#     company_id: String,
+#     round_date: String
+#     =>
+#     round_type: String,
+#     amount_usd: Float?,
+#     lead_investor: String?,
+#     description: String,
+#     embedding: <F32; 384>
+# }
+
+# --- HNSW Vector Indices ---
+# ::hnsw create company:company_embedding_idx {
+#     dim: 384, m: 16, dtype: F32,
+#     fields: [embedding], distance: Cosine,
+#     ef_construction: 200
+# }
+#
+# ::hnsw create partnership:partnership_embedding_idx {
+#     dim: 384, m: 16, dtype: F32,
+#     fields: [embedding], distance: Cosine,
+#     ef_construction: 200
+# }
+
+# --- Standard Indices ---
+# ::index create person:by_company {company_id, id}
+# ::index create product:by_company {company_id, id}
+
+# --- Verify ---
+# ::relations

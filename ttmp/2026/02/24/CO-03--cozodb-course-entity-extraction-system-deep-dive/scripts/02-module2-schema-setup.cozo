@@ -1,0 +1,72 @@
+# =============================================================================
+# Module 2 Exercise: Complete Schema Setup
+# =============================================================================
+# This script creates the full entity extraction schema from the project.
+# Run each block separately (CozoDB executes one query at a time).
+
+# --- Step 1: Create the person relation ---
+:create person {
+    id: String
+    =>
+    name: String,
+    description: String,
+    first_mentioned: String,
+    embedding: <F32; 384>
+}
+
+# --- Step 2: Create the relationship relation ---
+# :create relationship {
+#     id: String,
+#     from_person: String,
+#     to_person: String,
+#     timestamp: String
+#     =>
+#     relationship_type: String,
+#     description: String,
+#     sentiment: String,
+#     strength: Float,
+#     embedding: <F32; 384>
+# }
+
+# --- Step 3: Create the behavior relation ---
+# :create behavior {
+#     id: String,
+#     person_id: String,
+#     timestamp: String
+#     =>
+#     action: String,
+#     description: String,
+#     location: String?,
+#     involves_persons: String?,
+#     embedding: <F32; 384>
+# }
+
+# --- Step 4: Create the event relation ---
+# :create event {
+#     id: String,
+#     timestamp: String
+#     =>
+#     title: String,
+#     description: String,
+#     participants: String,
+#     location: String?,
+#     embedding: <F32; 384>
+# }
+
+# --- Step 5: Create HNSW indices ---
+# ::hnsw create person:person_embedding_idx {
+#     dim: 384, m: 16, dtype: F32,
+#     fields: [embedding], distance: Cosine,
+#     ef_construction: 200
+# }
+
+# ::hnsw create relationship:relationship_embedding_idx {
+#     dim: 384, m: 16, dtype: F32,
+#     fields: [embedding], distance: Cosine,
+#     ef_construction: 200
+# }
+
+# --- Step 6: Inspect what we created ---
+# ::relations
+# ::columns person
+# ::columns relationship

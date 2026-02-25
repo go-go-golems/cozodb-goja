@@ -1,0 +1,15 @@
+In January 2024, OpenAI announced a major partnership with Microsoft, extending their cloud computing collaboration. Sam Altman, OpenAI's CEO, said the partnership would focus on enterprise AI solutions. Satya Nadella, Microsoft's CEO, confirmed a $10 billion investment.
+
+Meanwhile, Google launched Gemini Ultra in February 2024, their most powerful AI model. Sundar Pichai described it as a breakthrough in multimodal reasoning. Google also partnered with Samsung to integrate Gemini into Galaxy devices.
+
+In March 2024, Anthropic raised $2.75 billion in a Series D round led by Menlo Ventures, with participation from Google. Dario Amodei, Anthropic's CEO, announced the launch of Claude 3, competing directly with GPT-4.
+
+Apple hired several ex-Google AI researchers in April 2024, signaling their entrance into the generative AI race. Tim Cook mentioned AI integration across all Apple products at the Spring event, where they unveiled Apple Intelligence for iOS 18.
+
+By May 2024, the competitive landscape had intensified. Meta released Llama 3, their open-source large language model. Mark Zuckerberg positioned Meta as the champion of open-source AI, contrasting with OpenAI's closed approach.
+
+In June 2024, Amazon Web Services expanded its partnership with Anthropic, committing $4 billion to support Claude's infrastructure needs. Andy Jassy, Amazon's CEO, emphasized the strategic importance of AI workloads for AWS revenue growth.
+
+The European Union passed the AI Act in July 2024, creating the world's first comprehensive AI regulation framework. Both OpenAI and Anthropic scrambled to ensure compliance, while Google argued its Gemini models already met most requirements.
+
+In August 2024, NVIDIA reported record quarterly revenue of $30 billion, driven entirely by AI chip demand. Jensen Huang predicted that AI inference workloads would eventually exceed training workloads, requiring even more computing power.

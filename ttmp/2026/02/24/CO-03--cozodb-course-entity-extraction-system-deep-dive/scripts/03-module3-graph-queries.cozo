@@ -1,0 +1,49 @@
+# =============================================================================
+# Module 3 Exercises: Advanced Queries and Graph Algorithms
+# =============================================================================
+# These assume the schema and data from Module 2 are loaded.
+
+# --- Exercise 3.1: Count relationships by type ---
+?[relationship_type, count(id)] := *relationship{id, relationship_type}
+
+# --- Exercise 3.2: Most connected person ---
+# ?[from_person, count(id)] :=
+#     *relationship{from_person, id}
+# :order -count(id)
+# :limit 1
+
+# --- Exercise 3.3: Average strength by sentiment ---
+# ?[sentiment, mean(strength), count(id), min(strength), max(strength)] :=
+#     *relationship{id, sentiment, strength}
+
+# --- Exercise 3.4: Recursive reachability from Sarah ---
+# reachable[person] := *relationship{from_person: 'sarah_martinez', to_person: person}
+# reachable[person] := reachable[intermediate], *relationship{from_person: intermediate, to_person: person}
+# ?[person] := reachable[person]
+
+# --- Exercise 3.5: Multi-hop (2 hops from Sarah) ---
+# ?[intermediate, final_person, rel1, rel2] :=
+#     *relationship{from_person: 'sarah_martinez', to_person: intermediate, relationship_type: rel1},
+#     *relationship{from_person: intermediate, to_person: final_person, relationship_type: rel2},
+#     final_person != 'sarah_martinez'
+
+# --- Exercise 3.6: Find triangles ---
+# ?[a, b, c] :=
+#     *relationship{from_person: a, to_person: b},
+#     *relationship{from_person: b, to_person: c},
+#     *relationship{from_person: c, to_person: a},
+#     a < b, b < c
+
+# --- Exercise 3.7: People with mixed sentiments ---
+# ?[person] :=
+#     *relationship{from_person: person, sentiment: 'positive'},
+#     *relationship{from_person: person, sentiment: 'negative'}
+
+# --- Exercise 3.8: PageRank ---
+# edges[from, to] := *relationship{from_person: from, to_person: to}
+# ?[node, score] <~ PageRank(edges[])
+# :order -score
+
+# --- Exercise 3.9: Community Detection ---
+# edges[from, to] := *relationship{from_person: from, to_person: to}
+# ?[node, community] <~ CommunityDetectionLouvain(edges[])

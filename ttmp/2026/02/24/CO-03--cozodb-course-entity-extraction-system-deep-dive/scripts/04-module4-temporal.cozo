@@ -1,0 +1,81 @@
+# =============================================================================
+# Module 4 Exercises: Time Travel and Temporal Data
+# =============================================================================
+# These assume the schema and data from Module 2 are loaded.
+
+# --- Exercise 4.1: Track Sarah-David relationship evolution ---
+?[timestamp, relationship_type, sentiment, strength] :=
+    *relationship{
+        from_person: 'sarah_martinez',
+        to_person: 'david_chen',
+        timestamp, relationship_type, sentiment, strength
+    }
+:order timestamp
+
+# --- Exercise 4.2: Relationships before June 2023 ---
+# ?[from_person, to_person, relationship_type, timestamp] :=
+#     *relationship{from_person, to_person, relationship_type, timestamp},
+#     timestamp < '2023-06'
+# :order timestamp
+
+# --- Exercise 4.3: Relationships in 2023 (string prefix match) ---
+# ?[timestamp, from_person, to_person, relationship_type] :=
+#     *relationship{timestamp, from_person, to_person, relationship_type},
+#     starts_with(timestamp, '2023')
+# :order timestamp
+
+# --- Exercise 4.4: Activity by month ---
+# ?[timestamp, count(id)] := *relationship{id, timestamp}
+# :order timestamp
+
+# --- Exercise 4.5: Create a Validity-based versioned relation ---
+# :create versioned_person {
+#     id: String,
+#     valid_at: Validity
+#     =>
+#     name: String,
+#     description: String
+# }
+
+# --- Exercise 4.6: Trigger for change tracking ---
+# :create relationship_history {
+#     id: String,
+#     from_person: String,
+#     to_person: String,
+#     archived_at: String,
+#     original_timestamp: String
+#     =>
+#     relationship_type: String,
+#     sentiment: String,
+#     strength: Float
+# }
+#
+# ::set_triggers relationship
+# on put {
+#     ?[id, from_person, to_person, archived_at, original_timestamp, relationship_type, sentiment, strength] :=
+#         _old[id, from_person, to_person, original_timestamp, relationship_type, _, sentiment, strength, _],
+#         archived_at = now()
+#     :put relationship_history {
+#         id, from_person, to_person, archived_at, original_timestamp
+#         => relationship_type, sentiment, strength
+#     }
+# }
+
+# --- Exercise 4.7: Unified timeline view ---
+# Use union of relationships, behaviors, and events to build a
+# single chronological timeline.
+
+# timeline[timestamp, type, description] :=
+#     *relationship{timestamp, from_person, to_person, description: desc},
+#     type = 'relationship',
+#     description = concat(from_person, ' -> ', to_person, ': ', desc)
+# timeline[timestamp, type, description] :=
+#     *behavior{timestamp, person_id, description: desc, action},
+#     type = 'behavior',
+#     description = concat(person_id, ' ', action, ': ', desc)
+# timeline[timestamp, type, description] :=
+#     *event{timestamp, title, description: desc},
+#     type = 'event',
+#     description = concat(title, ': ', desc)
+# ?[timestamp, type, description] := timeline[timestamp, type, description]
+# :order timestamp
