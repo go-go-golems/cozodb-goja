@@ -48,3 +48,11 @@
     - `go test ./... -count=1` passes.
     - `make help` reflects new target behavior.
     - `make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'` starts and exits cleanly in PTY.
+- Cleanup commit `0518bd4` in `cozodb-goja`:
+  - Deleted legacy duplicate runtime:
+    - `cmd/cozo-tui/main.go`
+    - `cmd/cozo-seed/main.go`
+    - `internal/tui/*`
+  - Ran `go mod tidy` to drop now-unused direct TUI deps.
+  - Validation:
+    - `go test ./... -count=1` passes in `cozodb-goja`.
