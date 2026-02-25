@@ -54,7 +54,7 @@ I also confirmed baseline state from COJS-01 so this ticket can focus strictly o
 
 **Inferred user intent:** Continue development momentum with transparent process tracking and disciplined execution.
 
-**Commit (code):** pending
+**Commit (code):** `79f9777` — "docs(cojs-02): track tasks diary changelog and doctor closure"
 
 ### What I did
 
@@ -122,7 +122,7 @@ Validation included workspace and module test modes, lint, and an explicit tagge
 
 **Inferred user intent:** Achieve a practical next increment toward production backend support while keeping traceability high.
 
-**Commit (code):** pending
+**Commit (code):** `e767834` — "feat(cozocgo): wire real tagged cozo backend and open options"
 
 ### What I did
 

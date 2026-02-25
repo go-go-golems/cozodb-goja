@@ -35,7 +35,7 @@
 - [x] `P5-T2` Update COJS-02 changelog with implementation milestones.
 - [x] `P5-T3` Relate key files to diary/design docs.
 - [x] `P5-T4` Run `docmgr doctor --ticket COJS-02-REAL-BACKEND-WIRING --stale-after 30`.
-- [ ] `P5-T5` Commit in focused slices as tasks complete.
+- [x] `P5-T5` Commit in focused slices as tasks complete.
 
 ## Notes
 
