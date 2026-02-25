@@ -11,6 +11,8 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-plugin-run/main.go
+      Note: Workstream E smoke-runner command
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-tui/main.go
       Note: Relocated TUI entrypoint committed in CO-07 Workstream B
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/go.mod
@@ -23,12 +25,18 @@ RelatedFiles:
       Note: Timeout/panic error normalization
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
       Note: High-level RunExtractorScript entrypoint
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host_test.go
+      Note: End-to-end extractor run integration smoke test
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/options.go
       Note: Host runtime options and defaults
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/runtime.go
       Note: goja runtime setup and module registration
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/runtime_test.go
+      Note: Host runtime module registration sanity test
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader.go
       Note: Descriptor validation
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader_test.go
+      Note: Loader validation tests
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/runner.go
       Note: Descriptor load/create/run flow with guarded executor
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/types.go
@@ -37,12 +45,27 @@ RelatedFiles:
       Note: Relocated screen router for F1-F7
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/seeddata/seed.go
       Note: Relocated seed data initializer
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/fixtures/extractor_fixture.js
+      Note: Deterministic smoke test extractor fixture
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/fixtures/transcript_fixture.txt
+      Note: Fixture transcript used for smoke run
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/lib/relationship_constants.js
+      Note: Relocated script support library
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/lib/relationship_extractor_factory.js
+      Note: Relocated factory helper
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/lib/relationship_parsing.js
+      Note: Relocated parsing helper
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/relation_extractor_reflective.js
+      Note: Relocated reflective extractor script
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/relation_extractor_template.js
+      Note: Relocated extractor template script
 ExternalSources: []
 Summary: Implementation diary for CO-07 phase 1-3 execution
 LastUpdated: 2026-02-25T12:30:00-05:00
 WhatFor: Chronological build/debug/validation notes for relocation and runtime foundation work
 WhenToUse: Use to review implementation steps and reproduce results
 ---
+
 
 
 
@@ -257,3 +280,145 @@ The result is a reusable host API that can execute extractor scripts with regist
 ### Technical details
 - Guarded execution hook type: `type GuardedExecutor func(timeout time.Duration, fn func() (goja.Value, error)) (goja.Value, error)`.
 - Timeout enforcement uses `vm.Interrupt(&TimeoutError{...})` and `vm.ClearInterrupt()` per run.
+
+## Step 4: Relocate JS Assets and Add Smoke Runner (Workstream E)
+
+This step moved extractor JS assets into the relocated module and added an executable smoke path that does not depend on external model credentials. The smoke command validates host/runtime wiring by executing a local fixture extractor end-to-end.
+
+The fixture plugin emits deterministic structured JSON so output-shape checks are reliable in CI and local development.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue through remaining CO-07 tasks, commit each functional milestone, and preserve diary traceability.
+
+**Inferred user intent:** Prove the new runtime path actually runs scripts, not only compiles.
+
+**Commit (code):** `8696779` — "co-07: relocate extractor scripts and add plugin smoke runner"
+
+### What I did
+- Copied script set into relocated module:
+  - `scripts/relation_extractor_template.js`
+  - `scripts/relation_extractor_reflective.js`
+  - `scripts/lib/relationship_constants.js`
+  - `scripts/lib/relationship_parsing.js`
+  - `scripts/lib/relationship_extractor_factory.js`
+- Added local smoke fixtures:
+  - `scripts/fixtures/extractor_fixture.js`
+  - `scripts/fixtures/transcript_fixture.txt`
+- Added `cmd/cozo-plugin-run/main.go` script runner CLI using `internal/geppettohost` + `internal/plugins`.
+- Validated relative import paths in moved scripts:
+  - `require("./lib/relationship_extractor_factory")` present in both top-level script variants
+  - `scripts/lib/*.js` files exist at expected paths
+- Executed smoke command:
+  - `go run ./cmd/cozo-plugin-run --script ./scripts/fixtures/extractor_fixture.js --transcript ./scripts/fixtures/transcript_fixture.txt --script-root ./scripts`
+- Verified decoded payload shape contains `metadata` + `extraction.people[]` + `extraction.relationships[]`.
+
+### Why
+- Workstream E requires script relocation and an executable runtime smoke gate to validate host/loader integration.
+
+### What worked
+- Fixture plugin executed successfully through runtime host.
+- Output JSON decoded as expected and included descriptor metadata.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- A deterministic local fixture extractor is essential to validate runtime behavior without depending on network/model credentials.
+
+### What was tricky to build
+- The smoke command needed to set compatibility globals (`RELATIONSHIP_*`) so moved scripts and future runtime behavior stay aligned with prototype expectations.
+
+### What warrants a second pair of eyes
+- CLI contract for `cmd/cozo-plugin-run` should be reviewed before treating it as stable external interface.
+
+### What should be done in the future
+- Add this smoke command into CI or makefile targets once phase ticketing calls for automation.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/cmd/cozo-plugin-run/main.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/fixtures/extractor_fixture.js`
+- Validate smoke run with the command listed above.
+
+### Technical details
+- Smoke output metadata confirmed plugin descriptor values:
+  - `plugin_api_version = cozo.extractor/v1`
+  - `plugin_kind = extractor`
+  - `plugin_id = cozo.fixture.extractor`
+
+## Step 5: Add Quality Gates and Fix Descriptor Panic (Workstream F)
+
+This step implemented test coverage for loader validation and host integration, then fixed a panic uncovered by the new tests. The panic occurred when descriptor fields were missing and `String()` was called on undefined values.
+
+After hardening field parsing, both module tests and boundary tests in `cozodb-goja/pkg/cozoapi` passed.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Complete the test/quality workstream and lock down boundary behavior.
+
+**Inferred user intent:** Ensure migration quality is enforced through tests, not just manual checks.
+
+**Commit (code):** `c4eba2f` — "co-07: add plugin/host runtime tests and harden descriptor parsing"
+
+### What I did
+- Added `internal/plugins/loader_test.go` covering:
+  - missing descriptor id
+  - wrong `apiVersion`
+  - empty transcript canonicalization rejection
+  - valid descriptor fixture execution path
+- Added `internal/geppettohost/runtime_test.go` sanity test for module registration:
+  - `require("cozodb")`
+  - `require("geppetto")`
+  - `require("geppetto/plugins")`
+- Added `internal/geppettohost/host_test.go` integration smoke test running temporary JS fixture through `Host.RunExtractorScript`.
+- Hardened descriptor parsing in `internal/plugins/loader.go` with safe optional field reads.
+- Re-ran validation:
+  - `cozo-extraction-tui`: `go test ./... -count=1`
+  - `cozodb-goja`: `go test ./pkg/cozoapi/... -count=1`
+
+### Why
+- Workstream F explicitly requires loader/host tests and boundary stability checks.
+
+### What worked
+- Tests now cover key failure paths and basic runtime integration.
+- Descriptor parsing is panic-safe for missing fields.
+- Boundary package tests in `cozodb-goja` passed.
+
+### What didn't work
+- First run of new tests exposed a panic:
+  - `panic: runtime error: invalid memory address or nil pointer dereference`
+  - Location: `internal/plugins/loader.go` during `DecodeDescriptorMeta`
+  - Cause: unsafe `descriptorObj.Get(...).String()` on missing fields
+- First valid fixture run failed due missing explicit `apiVersion` in test fixture with shimmed `defineExtractorPlugin`.
+  - Fix: set `apiVersion`/`kind` explicitly in loader fixture script.
+
+### What I learned
+- Descriptor decoding must treat missing values as first-class validation failures, not string coercions.
+- Test shims for `geppetto/plugins` should either mimic defaults or fixture scripts must provide explicit defaults.
+
+### What was tricky to build
+- Building a realistic but deterministic loader integration test required a minimal native module shim for `geppetto/plugins` in goja require registry.
+
+### What warrants a second pair of eyes
+- Error-message contracts from `DecodeDescriptorMeta` and `LoadAndRunExtractorPlugin` should be reviewed for external caller expectations.
+
+### What should be done in the future
+- Expand timeout and panic-path tests to assert exact error typing (`ErrPluginRunTimeout`, `ErrPluginExecutionPanic`).
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader_test.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host_test.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui && go test ./... -count=1`
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja && go test ./pkg/cozoapi/... -count=1`
+
+### Technical details
+- Field-read helper added: `readOptionalStringField(obj, key)`.
+- Loader fixtures use a local `geppetto/plugins` shim in tests to avoid heavy external runtime setup.

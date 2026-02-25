@@ -64,31 +64,31 @@
 
 ## Workstream E: Script Relocation and Runtime Smoke
 
-- [ ] Copy `relation_extractor_template.js` into new scripts path
-- [ ] Copy `relation_extractor_reflective.js` into new scripts path
-- [ ] Copy `scripts/lib/relationship_constants.js`
-- [ ] Copy `scripts/lib/relationship_parsing.js`
-- [ ] Copy `scripts/lib/relationship_extractor_factory.js`
-- [ ] Validate relative JS import paths in moved scripts
-- [ ] Add runtime smoke command (script runner mode) to relocated module
-- [ ] Execute smoke command against fixture transcript
-- [ ] Confirm decoded extraction payload shape
+- [x] Copy `relation_extractor_template.js` into new scripts path
+- [x] Copy `relation_extractor_reflective.js` into new scripts path
+- [x] Copy `scripts/lib/relationship_constants.js`
+- [x] Copy `scripts/lib/relationship_parsing.js`
+- [x] Copy `scripts/lib/relationship_extractor_factory.js`
+- [x] Validate relative JS import paths in moved scripts
+- [x] Add runtime smoke command (script runner mode) to relocated module
+- [x] Execute smoke command against fixture transcript
+- [x] Confirm decoded extraction payload shape
 
 ## Workstream F: Tests and Quality Gates
 
-- [ ] Add `internal/plugins/loader_test.go`
-- [ ] Add invalid descriptor test (missing id)
-- [ ] Add invalid descriptor test (wrong apiVersion)
-- [ ] Add invalid run input test (empty transcript)
-- [ ] Add valid descriptor fixture test
-- [ ] Add host runtime creation sanity test
-- [ ] Add integration smoke test for plugin run path (if feasible)
-- [ ] Run full module test suite
-- [ ] Run `go test` for `cozodb-goja/pkg/cozoapi` to ensure boundary stability
+- [x] Add `internal/plugins/loader_test.go`
+- [x] Add invalid descriptor test (missing id)
+- [x] Add invalid descriptor test (wrong apiVersion)
+- [x] Add invalid run input test (empty transcript)
+- [x] Add valid descriptor fixture test
+- [x] Add host runtime creation sanity test
+- [x] Add integration smoke test for plugin run path (if feasible)
+- [x] Run full module test suite
+- [x] Run `go test` for `cozodb-goja/pkg/cozoapi` to ensure boundary stability
 
 ## Workstream G: Ticket Hygiene
 
 - [x] Update CO-07 changelog with milestone notes
-- [ ] Keep design doc aligned with actual file paths implemented
+- [x] Keep design doc aligned with actual file paths implemented
 - [x] Relate new/modified code files with `docmgr doc relate`
 - [x] Run `docmgr doctor --ticket CO-07 --stale-after 30`

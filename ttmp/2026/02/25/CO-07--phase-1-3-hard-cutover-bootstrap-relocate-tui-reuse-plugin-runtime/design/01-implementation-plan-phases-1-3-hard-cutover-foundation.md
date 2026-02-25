@@ -253,7 +253,7 @@ Host options object must include:
 
 ## 6.4 Runtime smoke command
 
-Add a dev command (or hidden command) in `cozo-extraction-tui` that can execute a plugin script against a sample transcript without entering full TUI mode. This is for debugging runtime issues quickly.
+Add a dev command in `cozo-extraction-tui` that can execute a plugin script against a sample transcript without entering full TUI mode. This is for debugging runtime issues quickly. Implemented command path: `cmd/cozo-plugin-run/main.go`.
 
 ---
 
@@ -276,7 +276,10 @@ Add a dev command (or hidden command) in `cozo-extraction-tui` that can execute 
 1. `.../internal/geppettohost/*.go` (new)
 2. `.../internal/plugins/*.go` (new)
 3. `.../internal/plugins/*_test.go` (new)
-4. `.../scripts/plugins/*` (new/relocated)
+4. `.../cmd/cozo-plugin-run/main.go` (new)
+5. `.../scripts/relation_extractor_*.js` (new/relocated)
+6. `.../scripts/lib/*.js` (new/relocated)
+7. `.../scripts/fixtures/*` (new)
 
 ---
 
