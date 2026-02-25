@@ -34,3 +34,5 @@ intent:
 status:
     - slug: active
       description: Active work item
+    - slug: complete
+      description: Ticket fully implemented and closed
