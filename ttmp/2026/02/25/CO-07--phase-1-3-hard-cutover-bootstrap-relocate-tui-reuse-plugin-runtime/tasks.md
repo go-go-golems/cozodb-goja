@@ -42,7 +42,7 @@
 - [ ] Validate F7 query console executes scripts
 - [x] Verify screen switching hotkeys F1-F7
 - [x] Verify quit flow and DB close behavior
-- [ ] Document parity results in changelog
+- [x] Document parity results in changelog
 
 ## Workstream D: Plugin Runtime Foundation (Phase 3)
 
