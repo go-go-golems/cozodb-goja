@@ -113,6 +113,46 @@ func TestModuleRelSystemOpsRespectPolicy(t *testing.T) {
 	}
 }
 
+func TestModuleOpenOptionsDecode(t *testing.T) {
+	backend := fakebackend.New()
+	db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+
+	var captured OpenOptions
+	mod := New(func(_ context.Context, opts OpenOptions) (*cozoapi.DB, error) {
+		captured = opts
+		return db, nil
+	})
+	vm, req := newRuntimeWithModule(t, mod)
+
+	cozodb := requireModule(t, vm, req)
+	openOpts := vm.ToValue(map[string]any{
+		"backend": "cozocgo",
+		"engine":  "sqlite",
+		"path":    "tmp/cozo.db",
+		"options": map[string]any{
+			"create": true,
+		},
+	})
+	_ = call(t, cozodb.Get("open"), cozodb, openOpts)
+
+	if captured.Backend != "cozocgo" {
+		t.Fatalf("backend = %q, want cozocgo", captured.Backend)
+	}
+	if captured.Engine != "sqlite" {
+		t.Fatalf("engine = %q, want sqlite", captured.Engine)
+	}
+	if captured.Path != "tmp/cozo.db" {
+		t.Fatalf("path = %q, want tmp/cozo.db", captured.Path)
+	}
+	create, ok := captured.Options["create"].(bool)
+	if !ok || !create {
+		t.Fatalf("options.create = %#v", captured.Options["create"])
+	}
+}
+
 func newRuntimeWithModule(t *testing.T, mod *Module) (*goja.Runtime, *require.RequireModule) {
 	t.Helper()
 	reg := require.NewRegistry()

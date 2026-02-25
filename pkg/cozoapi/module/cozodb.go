@@ -12,7 +12,10 @@ import (
 )
 
 type OpenOptions struct {
-	Backend string `json:"backend"`
+	Backend string         `json:"backend"`
+	Engine  string         `json:"engine"`
+	Path    string         `json:"path"`
+	Options map[string]any `json:"options"`
 }
 
 type OpenFunc func(context.Context, OpenOptions) (*cozoapi.DB, error)
@@ -389,12 +392,25 @@ func preparedQueryToValue(vm *goja.Runtime, query cozoapi.PreparedQuery) goja.Va
 
 func decodeOpenOptions(vm *goja.Runtime, v goja.Value) (OpenOptions, error) {
 	if isAbsent(v) {
-		return OpenOptions{Backend: "fake"}, nil
+		return OpenOptions{Backend: "fake", Options: map[string]any{}}, nil
 	}
 	obj := v.ToObject(vm)
-	opts := OpenOptions{Backend: "fake"}
+	opts := OpenOptions{Backend: "fake", Options: map[string]any{}}
 	if backend := obj.Get("backend"); !isAbsent(backend) {
 		opts.Backend = strings.TrimSpace(backend.String())
+	}
+	if engine := obj.Get("engine"); !isAbsent(engine) {
+		opts.Engine = strings.TrimSpace(engine.String())
+	}
+	if path := obj.Get("path"); !isAbsent(path) {
+		opts.Path = path.String()
+	}
+	if options := obj.Get("options"); !isAbsent(options) {
+		optionsMap := map[string]any{}
+		if err := vm.ExportTo(options, &optionsMap); err != nil {
+			return OpenOptions{}, fmt.Errorf("decode open options.options: %w", err)
+		}
+		opts.Options = optionsMap
 	}
 	if strings.TrimSpace(opts.Backend) == "" {
 		opts.Backend = "fake"

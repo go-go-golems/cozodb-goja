@@ -10,6 +10,8 @@ import (
 	"github.com/go-go-golems/cozodb-goja/pkg/cozoapi/fakebackend"
 )
 
+var openCozoBackend = cozocgo.Open
+
 func DefaultOpen(ctx context.Context, opts OpenOptions) (*cozoapi.DB, error) {
 	backendName := strings.TrimSpace(opts.Backend)
 	if backendName == "" {
@@ -28,8 +30,14 @@ func DefaultOpen(ctx context.Context, opts OpenOptions) (*cozoapi.DB, error) {
 	case "fake":
 		return cozoapi.Open(fakebackend.New(), policy)
 	case "cozocgo", "cozo_cgo":
-		backend, err := cozocgo.Open(ctx, cozocgo.OpenOptions{
-			Engine: "mem",
+		engine := strings.TrimSpace(opts.Engine)
+		if engine == "" {
+			engine = "mem"
+		}
+		backend, err := openCozoBackend(ctx, cozocgo.OpenOptions{
+			Engine:  engine,
+			Path:    opts.Path,
+			Options: opts.Options,
 		})
 		if err != nil {
 			return nil, err
