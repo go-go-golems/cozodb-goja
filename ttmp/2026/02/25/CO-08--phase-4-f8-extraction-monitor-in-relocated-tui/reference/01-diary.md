@@ -21,6 +21,7 @@ RelatedFiles:
       Note: |-
         CO-08 Workstream A extraction screen scaffold
         Workstream B plugin discovery and overlay implementation
+        Workstream C input modes and transcript validation flow
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -31,6 +32,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
 
 
 
@@ -224,3 +226,66 @@ The implementation is intentionally scoped to discovery/selection state only; ru
 
 ### Technical details
 - Discovery path uses `filepath.WalkDir` with directory skip list and descriptor decode via `plugins.DecodeDescriptorMeta`.
+
+## Step 4: Implement Transcript Input Modes and Validation Flow (Workstream C)
+
+This step added transcript source UX primitives to the extraction screen so run requests can be validated against real input state. File mode and manual mode now exist with explicit switch behavior and pre-run transcript checks.
+
+The run action is still scaffolded, but now enforces transcript readability/non-empty constraints before reporting run readiness.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue through CO-08 task list in order and keep diary updates granular.
+
+**Inferred user intent:** Build the F8 monitor end-to-end in staged, testable increments.
+
+**Commit (code):** `6f646a1` — "co-08: add transcript input modes and run validation scaffold"
+
+### What I did
+- Added `InputMode` enum in extraction model:
+  - `file`
+  - `manual`
+- Added file path input component using `textinput.Model`.
+- Added manual transcript component using `textarea.Model`.
+- Implemented key binding `n` to cycle source modes and update focus states.
+- Added mode indicator and source-specific UI rendering in main panel.
+- Added transcript resolution helper:
+  - file mode reads configured path
+  - manual mode reads textarea value
+- Added non-empty validation gate in `r` handling; run request is blocked with explicit status when input is invalid.
+- Re-ran module validation:
+  - `go test ./... -count=1` in `cozo-extraction-tui`.
+
+### Why
+- Workstream C is required before asynchronous extraction execution can be wired reliably.
+
+### What worked
+- Input mode transitions and focus updates are functional.
+- Transcript validation errors now surface as structured status messages.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Keeping transcript resolution centralized (`resolveTranscript`) simplifies future run command wiring and error messaging.
+
+### What was tricky to build
+- Balancing key handling priority between global screen actions and active input widgets required explicit ordering in `Update`.
+
+### What warrants a second pair of eyes
+- UX behavior for entering/exiting file-path editing can be refined once run/import flows are fully interactive.
+
+### What should be done in the future
+- Implement Workstream D async run message flow using validated transcript payload from this step.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- File transcript loading uses `os.ReadFile` and strict `strings.TrimSpace` emptiness checks.

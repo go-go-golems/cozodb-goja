@@ -8,3 +8,4 @@
 - Added CO-08 diary and related-file links; queued implementation behind CO-07 completion.
 - Completed Workstream A scaffold in extraction repo (commit `ebe1940`): added `internal/tui/screens/extraction/model.go` and wired F8 routing/view/resize/status tab in app router.
 - Completed Workstream B scaffold in extraction repo (commit `7487462`): added async plugin discovery, deterministic descriptor sorting, overlay list/detail panes, invalid-plugin diagnostics, and `p`-driven selection events.
+- Completed Workstream C scaffold in extraction repo (commit `6f646a1`): added file/manual transcript modes, source path input, manual textarea, `n` mode switching, and non-empty transcript validation before run trigger.

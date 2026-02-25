@@ -24,13 +24,13 @@
 
 ## Workstream C: Transcript Input UX
 
-- [ ] Add input mode enum (`file`, `manual`)
-- [ ] Add file path input component
-- [ ] Add manual transcript textarea component
-- [ ] Implement key binding `n` for source prompt flow
-- [ ] Add mode switch command and visual indicator
-- [ ] Implement transcript read/validation helper
-- [ ] Validate non-empty transcript before run
+- [x] Add input mode enum (`file`, `manual`)
+- [x] Add file path input component
+- [x] Add manual transcript textarea component
+- [x] Implement key binding `n` for source prompt flow
+- [x] Add mode switch command and visual indicator
+- [x] Implement transcript read/validation helper
+- [x] Validate non-empty transcript before run
 
 ## Workstream D: Async Extraction Run Flow
 
