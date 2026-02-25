@@ -7,6 +7,8 @@ topics:
       description: javascript topic for CozoDB goja API work
     - slug: api
       description: api topic for CozoDB goja API work
+    - slug: cgo
+      description: CGo-based native bindings and linker/runtime dependencies
 docTypes:
     - slug: index
       description: index document type
