@@ -21,3 +21,8 @@
 - Updated cross-ticket docs:
   - CO-05 index/tasks now reference relocated canonical command/runtime paths.
   - CO-06 changelog includes final cutover summary and boundary note.
+
+## 2026-02-25
+
+CO-10 closed: hard cutover complete, legacy path guardrails active
+
