@@ -88,7 +88,7 @@ I validated both repos with tests, ran boundary scans with `rg`, added a guard s
 
 **Inferred user intent:** Formally complete Phase 6 with enforceable safeguards and updated documentation.
 
-**Commit (code):** pending
+**Commit (code):** `860592d` — "CO-10: close hard-cutover with legacy-path guardrails"
 
 ### What I did
 - Verified no active legacy references in `cozodb-goja` with `rg ... --glob '!ttmp/**'`.
