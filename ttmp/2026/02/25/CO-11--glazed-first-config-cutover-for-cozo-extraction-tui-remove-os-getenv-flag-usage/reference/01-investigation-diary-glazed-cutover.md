@@ -46,9 +46,27 @@ RelatedFiles:
       Note: |-
         Captured Geppetto bootstrap and precedence middleware implementation
         Diary evidence for bootstrap middleware approach
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/commands/tui.go
+      Note: Glazed TUI command execution path and parser option-order fix
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/commands/plugin_run.go
+      Note: Glazed plugin-run command execution path and parser option-order fix
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/config/settings.go
+      Note: Typed sections and aggregate execution settings decode helpers
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/config/middlewares.go
+      Note: Cozo middleware bootstrap/preference chain implementation
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/config/middlewares_test.go
+      Note: Precedence and profile bootstrap tests for cozo middleware chain
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/config/embeddings_test.go
+      Note: Provider construction tests from parsed values
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/commands/decode_test.go
+      Note: Command typed-settings decode coverage for tui and plugin-run
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/Makefile
+      Note: Repeatable cozo_cgo validation + real-seed run targets
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/README.md
+      Note: Glazed-only invocation examples and hard-cutover note
 ExternalSources: []
 Summary: Chronological research diary for CO-11 covering discovery, evidence capture, architectural decisions, and delivery steps.
-LastUpdated: 2026-02-25T15:41:00-05:00
+LastUpdated: 2026-02-25T17:05:00-05:00
 WhatFor: Preserve command-level and middleware-level evidence supporting Glazed-first cutover planning.
 WhenToUse: Use when implementing CO-11 tasks or reviewing why the chosen migration architecture was selected.
 ---
@@ -390,6 +408,123 @@ Commands run in this step:
 ```bash
 go test ./... -count=1
 git commit -m "cozo-tui: cut over to glazed commands and injected embed providers"
+```
+
+## Step 12: implementation slice 2 (validation, docs, operator runbook)
+
+I executed the second implementation slice to close the remaining CO-11 validation and rollout tasks. This step added explicit tests for middleware precedence/profile bootstrap, typed settings decode, and provider construction, then updated Makefile and README for repeatable Glazed-first operator workflows.
+
+During live validation, I hit two runtime issues (`--profile-file` missing and embedding dimension mismatch at seed time) and addressed both in this same slice so the documented runbook reflects what actually works in the current codebase.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 11)
+
+**Assistant interpretation:** Continue implementing unfinished CO-11 tasks and keep committing/reporting each completed slice.
+
+**Inferred user intent:** Finish the hard-cutover ticket end-to-end with executable validation commands and accurate operator docs.
+
+**Commit (code):** `7fe59cf` — "cozo-tui: add precedence/decode tests and glazed run docs"
+
+### What I did
+
+1. Added validation coverage:
+   - `internal/config/middlewares_test.go`
+   - `internal/config/embeddings_test.go`
+   - `internal/commands/decode_test.go`
+2. Added aggregate execution settings decode helpers:
+   - `internal/config/settings.go`
+3. Fixed parser option-order bug so profile flags are registered:
+   - `internal/commands/tui.go`
+   - `internal/commands/plugin_run.go`
+4. Updated operator tooling:
+   - `Makefile` (Glazed runtime flags + real-seed target)
+   - `README.md` (hard-cutover usage + precedence note)
+5. Ran full validation suite:
+   - `go test ./... -count=1`
+   - `make test-cgo-vsearch`
+   - `make run-cgo-seed-only-real ...`
+   - Manual PTY run of `cozo-tui` and clean exit with `q`.
+
+### Why
+
+1. CO-11 required explicit precedence/decode/provider tests, not just passing runtime behavior.
+2. The Makefile and README needed to reflect post-cutover CLI so teammates stop using removed legacy flags.
+3. Live smoke commands had to be repeatable and documented against real profile/config credentials path.
+
+### What worked
+
+1. Added tests passed and validated intended precedence model.
+2. `.deps` native vector test path remained green.
+3. Real seed-only run succeeded with parsed-values profile/config overlays after dimension override.
+4. Manual interactive TUI startup and quit worked in a real PTY.
+
+### What didn't work
+
+1. First real-seed run failed:
+   - `error: unknown flag: --profile-file`
+   - Root cause: `WithParserConfig(...)` was applied after `WithProfileSettingsSection()`, overwriting `EnableProfileSettingsSection`.
+2. First real-seed run with profile defaults failed:
+   - `seed database: embed person sarah_martinez: expected 384 embedding dimensions, got 1536`
+   - Root cause: seed schema enforces 384-dim vectors while selected profile defaulted to 1536.
+3. Resolution:
+   - Reordered command builder options so profile section remains enabled.
+   - Ran seed with `SEED_EMBED_FLAGS='--embeddings-dimensions 384'`.
+
+### What I learned
+
+1. In Glazed builder options, `WithParserConfig` is a full struct assignment and can silently clear prior toggles.
+2. Real-profile smoke testing is mandatory because defaults in shared profile files can violate local schema invariants.
+3. For this codebase, embedding dimensions need explicit operator control in seed workflows.
+
+### What was tricky to build
+
+1. Cause: command option order interaction was non-obvious and only surfaced at runtime (`--profile-file` missing).
+2. Symptoms: help output excluded profile flags and real-seed target failed immediately.
+3. Approach:
+   - Reproduced with direct `--help` output.
+   - Verified Glazed option application semantics.
+   - Reordered options and reran real-seed flow.
+4. Result: profile settings flags became available and parsed-values profile loading worked.
+
+### What warrants a second pair of eyes
+
+1. Help output currently shows geppetto ai flag alias annotations that include `--profile`; verify this UX is acceptable.
+2. Seed schema dimension is fixed at 384 while profile defaults can be 1536; decide if schema should be parameterized in a later ticket.
+3. Parsed-fields output from shared config sources can carry sensitive metadata; ensure operator guidance avoids accidental secret logging.
+
+### What should be done in the future
+
+1. Add a dedicated command/help section explaining recommended profile names for 384-dim seed workflows.
+2. Add a safety guard that warns early when configured dimensions differ from schema-required dimensions.
+
+### Code review instructions
+
+1. Start with runtime bug fix:
+   - `internal/commands/tui.go`
+   - `internal/commands/plugin_run.go`
+2. Review tests:
+   - `internal/config/middlewares_test.go`
+   - `internal/config/embeddings_test.go`
+   - `internal/commands/decode_test.go`
+3. Review operator docs:
+   - `Makefile`
+   - `README.md`
+4. Re-run:
+   - `go test ./... -count=1`
+   - `make test-cgo-vsearch`
+   - `make run-cgo-seed-only-real SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'`
+
+### Technical details
+
+Commands run in this step:
+
+```bash
+go test ./... -count=1
+make test-cgo-vsearch
+make run-cgo-seed-only-real SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'
+CGO_LDFLAGS="-L$(pwd)/../../cozodb-goja/.deps/cozo" go run -tags cozo_cgo ./cmd/cozo-tui --runtime-engine sqlite --runtime-db /tmp/cozo-extraction-tui-seed-real3.db --config-file /home/manuel/.pinocchio/config.yaml --profile-file /home/manuel/.config/pinocchio/profiles.yaml --profile default --embeddings-dimensions 384
+git commit -m "cozo-tui: add precedence/decode tests and glazed run docs"
 ```
 
 ## Quick reference

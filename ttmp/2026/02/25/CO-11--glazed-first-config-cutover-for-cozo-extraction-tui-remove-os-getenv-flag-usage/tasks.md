@@ -33,7 +33,7 @@
 - [x] Create app section for TUI runtime behavior (auto-migrate, script-root, etc).
 - [x] Create app section for plugin-run behavior and IO fields.
 - [x] Define typed settings structs with `glazed` tags for all app fields.
-- [ ] Define one aggregate runtime settings struct used by command execution paths.
+- [x] Define one aggregate runtime settings struct used by command execution paths.
 
 ## Workstream C: middleware bootstrap and precedence
 
@@ -70,25 +70,25 @@
 
 - [x] Delete `applyEmbeddingCLIOverrides` env-bridge behavior from `cozo-tui` command path.
 - [x] Delete legacy env-helper functions used only for configuration loading.
-- [ ] Delete obsolete docs/hints referring to `COZO_TUI_*` runtime-only configuration.
+- [x] Delete obsolete docs/hints referring to `COZO_TUI_*` runtime-only configuration.
 - [x] Remove dead tests that exist only to validate env bridge behavior.
 
 ## Workstream H: validation and tests
 
-- [ ] Add middleware precedence tests covering defaults/config/profiles/env/flags.
-- [ ] Add bootstrap profile selection tests (profile from config/env/flag).
-- [ ] Add command decode tests for `tui` and `plugin-run` settings structs.
-- [ ] Add provider construction tests from parsed values (success + failure modes).
+- [x] Add middleware precedence tests covering defaults/config/profiles/env/flags.
+- [x] Add bootstrap profile selection tests (profile from config/env/flag).
+- [x] Add command decode tests for `tui` and `plugin-run` settings structs.
+- [x] Add provider construction tests from parsed values (success + failure modes).
 - [x] Run `go test ./... -count=1` in `cozo-extraction-tui`.
-- [ ] Run native-tagged vector path tests with `.deps` (`cozo_cgo`).
-- [ ] Run live seed smoke with real credentials through parsed-values path.
-- [ ] Run manual interactive TUI smoke in real TTY.
+- [x] Run native-tagged vector path tests with `.deps` (`cozo_cgo`).
+- [x] Run live seed smoke with real credentials through parsed-values path.
+- [x] Run manual interactive TUI smoke in real TTY.
 
 ## Workstream I: rollout docs and ticket hygiene
 
-- [ ] Update README and command help examples for Glazed-only invocation.
-- [ ] Add a short cutover note documenting that old env bridge is removed.
-- [ ] Relate final implementation files to CO-11 docs.
-- [ ] Keep changelog synchronized with phase milestones.
+- [x] Update README and command help examples for Glazed-only invocation.
+- [x] Add a short cutover note documenting that old env bridge is removed.
+- [x] Relate final implementation files to CO-11 docs.
+- [x] Keep changelog synchronized with phase milestones.
 - [x] Run `docmgr doctor --ticket CO-11 --stale-after 30` with clean result.
 - [x] Upload CO-11 bundle to reMarkable and verify remote listing.

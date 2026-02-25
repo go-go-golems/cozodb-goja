@@ -20,7 +20,7 @@ RelatedFiles:
       Note: Reference implementation for bootstrap and middleware precedence
 ExternalSources: []
 Summary: Research and implementation planning ticket for migrating cozo-extraction-tui configuration to Glazed sections/middlewares with typed settings decode and no runtime os.Getenv calls.
-LastUpdated: 2026-02-25T15:42:00-05:00
+LastUpdated: 2026-02-25T17:06:00-05:00
 WhatFor: Define and track a hard cutover from flag/env-driven config to Glazed-first command and runtime wiring.
 WhenToUse: Use when implementing command/config refactors across cozo-tui, plugin-run, geppettohost, seed, and F9 vector search.
 ---
@@ -34,9 +34,14 @@ CO-11 defines a hard cutover plan for replacing ad-hoc `flag` and `os.Getenv` us
 ## Current status
 
 1. Deep analysis completed and documented.
-2. Implementation work not started in this ticket yet.
-3. Precedence locked for this implementation pass: `flags > env > profiles > config > defaults` (simplest path).
-4. Hard cutover policy locked: no backwards compatibility.
+2. Hard-cutover implementation completed in two code commits (`96cc0b9`, `7fe59cf`) in `2026-02-18--cozodb-extraction`.
+3. Validation completed:
+   - `go test ./... -count=1`
+   - `make test-cgo-vsearch`
+   - real seed-only smoke with parsed-values profile/config path
+   - manual interactive PTY TUI smoke.
+4. Precedence locked and validated for this pass: `flags > env > profiles > config > defaults`.
+5. Hard cutover policy enforced: no backwards compatibility path retained.
 
 ## Key links
 

@@ -27,3 +27,17 @@
   - Removed env-based lazy embedding provider fallback from `geppettohost`.
   - Replaced stale env-bridge tests and removed obsolete `cmd/cozo-tui/main_test.go`.
   - Validation passed: `go test ./... -count=1` in `cozo-extraction-tui`.
+- Implementation commit `7fe59cf` in `2026-02-18--cozodb-extraction`:
+  - Added middleware precedence tests (`defaults < config < profiles < env < flags`) and profile bootstrap tests in `internal/config/middlewares_test.go`.
+  - Added parsed-values provider construction tests in `internal/config/embeddings_test.go`.
+  - Added command decode tests for typed settings in `internal/commands/decode_test.go`.
+  - Added aggregate execution settings decode helpers in `internal/config/settings.go`.
+  - Fixed command builder option-order bug so `--profile-file` is registered (profile settings no longer dropped by parser config override).
+  - Updated Makefile targets to Glazed-prefixed runtime flags and added real-seed helper target.
+  - Added `cozo-extraction-tui/README.md` with hard-cutover CLI examples and precedence note.
+- Additional validation after commit `7fe59cf`:
+  - `go test ./... -count=1` passes.
+  - `make test-cgo-vsearch` passes with `.deps` `libcozo_c.a`.
+  - Real credentials seed-only run succeeds via parsed-values path:
+    - `make run-cgo-seed-only-real SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'`
+  - Manual interactive TUI smoke in real PTY completed and exited cleanly with `q`.
