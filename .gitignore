@@ -21,3 +21,6 @@ dist/
 .history
 
 .deps
+
+# Built binaries
+/cozo-tui
