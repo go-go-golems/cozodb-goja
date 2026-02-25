@@ -89,7 +89,7 @@
 - [x] Run `gofmt` on F9 code changes
 - [x] Run module tests (`go test ./... -count=1`)
 - [ ] Verify F9 manual smoke in TUI
-  Blocked in current environment: `go run ./cmd/cozo-tui --engine mem` fails with `cozocgo backend requires build tag cozo_cgo`, and tagged builds hit the known `libcozo_c.a` archive-index linker error.
+  Blocked in current environment: non-tag run reports `cozocgo backend requires build tag cozo_cgo`; tagged builds currently fail linking against `github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a` (unresolved `cozo_*` symbols / malformed archive diagnostics).
 - [x] Update CO-09 changelog with progress details
 - [x] Relate key files with `docmgr doc relate`
 - [x] Run `docmgr doctor --ticket CO-09 --stale-after 30`

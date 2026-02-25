@@ -37,7 +37,7 @@ RelatedFiles:
       Note: Phase 5 task queue referenced by diary
 ExternalSources: []
 Summary: Implementation diary for CO-09
-LastUpdated: 2026-02-25T13:07:00-05:00
+LastUpdated: 2026-02-25T13:16:00-05:00
 WhatFor: Track phase 5 vector search and embedding implementation
 WhenToUse: Use when reviewing CO-09 execution progress
 ---
@@ -264,3 +264,75 @@ A dedicated `geppettohost` embedding API was added so the TUI path can use share
   - `COZO_TUI_EMBEDDINGS_DIMENSIONS` (validated to 384 in F9 flow)
   - `COZO_TUI_OLLAMA_BASE_URL` / `OLLAMA_BASE_URL`
   - `COZO_TUI_OPENAI_API_KEY` / `OPENAI_API_KEY`
+
+## Step 4: Attempt Manual Smoke Unblock for `cozo_cgo` and Capture Root Cause
+
+After landing the main implementation, I attempted to close the remaining Workstream I manual-smoke task by fixing the local static archive issue in the `cie` module cache. This was done as a local environment remediation attempt so tagged integration tests and TUI runtime could execute.
+
+The attempt partially changed the failure signature but did not unblock execution. We now have stronger evidence that the shipped archive is malformed for local toolchain linking, not only missing an index.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue through remaining validation tasks and document blockers precisely.
+
+**Inferred user intent:** Finish phase-5 implementation with explicit explanation for any unresolved operational blockers.
+
+**Commit (code):** N/A
+
+### What I did
+- Verified file and directory permissions for:
+  - `/home/manuel/go/pkg/mod/github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a`
+  - module `lib/` directory (read-only by default in module cache).
+- Attempted local archive-index fix:
+  - temporarily made `lib/` and `libcozo_c.a` writable,
+  - ran `ranlib` on the archive,
+  - restored read-only permissions.
+- Re-ran blocked commands:
+  - `go test -tags cozo_cgo ./internal/tui/screens/vsearch -count=1`
+  - `timeout 8s go run -tags cozo_cgo ./cmd/cozo-tui --engine mem`
+  - archive diagnostics with `nm` and `file`.
+
+### Why
+- Needed to attempt completion of the final unchecked manual-smoke task rather than leaving it unexamined.
+
+### What worked
+- Permission and `ranlib` workflow executed successfully after temporary write-enable.
+- Blocker diagnostics are now more precise and reproducible.
+
+### What didn't work
+- Tagged test and tagged TUI run still fail at link time with unresolved `cozo_*` symbols.
+- `nm` reports archive issues:
+  - `file format not recognized`
+  - `malformed archive`
+- Conclusion: local `libcozo_c.a` artifact is not linkable for this toolchain state, beyond the earlier “missing index” symptom.
+
+### What I learned
+- The failure evolved from “archive has no index” to “undefined references/malformed archive” after index attempts, indicating deeper artifact integrity/format mismatch.
+
+### What was tricky to build
+- Fix attempts touched Go module cache paths that are intentionally read-only, requiring careful temporary permission changes and restoration while preserving reproducibility.
+
+### What warrants a second pair of eyes
+- Cozo C static artifact provenance for `github.com/kraklabs/cie@v0.7.20` in this environment.
+- Whether the correct remediation is:
+  1. replacing `libcozo_c.a` from a known-good build,
+  2. using a matching prebuilt artifact for this toolchain/platform,
+  3. switching linking mode/source distribution.
+
+### What should be done in the future
+- Keep Workstream I manual smoke blocked until a valid `libcozo_c` artifact is installed.
+- Once fixed, rerun:
+  - `go test -tags cozo_cgo ./internal/tui/screens/vsearch -count=1`
+  - `go run -tags cozo_cgo ./cmd/cozo-tui --engine mem`
+
+### Code review instructions
+- Review commands and failure signatures recorded in this step and changelog.
+- Confirm Workstream I task remains unchecked until runtime can be executed end-to-end.
+
+### Technical details
+- Commands producing blocker evidence:
+  - `go test -tags cozo_cgo ./internal/tui/screens/vsearch -count=1`
+  - `go run -tags cozo_cgo ./cmd/cozo-tui --engine mem`
+  - `nm -g --defined-only /home/manuel/go/pkg/mod/github.com/kraklabs/cie@v0.7.20/lib/libcozo_c.a`
