@@ -12,7 +12,7 @@ Intent: long-term
 Owners: []
 RelatedFiles:
     - Path: cozodb-goja/pkg/cozoapi/cozocgo/adapter_cozo_cgo.go
-      Note: CGO adapter that wraps cozo-lib-go
+      Note: CGO adapter migrated from cozo-lib-go to cie/pkg/cozodb
     - Path: cozodb-goja/ttmp/2026/02/24/CO-04--tui-for-cozodb-relationship-explorer/scripts/01-cozo-write-lock-repro.go
       Note: Repro through cozoapi wrapper (5 isolation levels)
     - Path: cozodb-goja/ttmp/2026/02/24/CO-04--tui-for-cozodb-relationship-explorer/scripts/02-cozo-raw-cgo-repro.go
@@ -20,8 +20,9 @@ RelatedFiles:
 ExternalSources:
     - https://github.com/cozodb/cozo-lib-go
     - https://github.com/cozodb/cozo/releases/tag/v0.7.5
-Summary: "Confirmed ABI mismatch in cozo-lib-go v0.7.5: cozo_run_query is called with 3 args while libcozo_c expects 4 (immutable flag), causing write queries to execute in read-only mode"
-LastUpdated: 2026-02-24T20:30:00-05:00
+    - https://pkg.go.dev/github.com/kraklabs/cie/pkg/cozodb?tab=versions
+Summary: "Confirmed ABI mismatch in cozo-lib-go v0.7.5 and mitigated in project by migrating adapter to github.com/kraklabs/cie/pkg/cozodb@v0.7.20"
+LastUpdated: 2026-02-25T01:08:00-05:00
 WhatFor: "Track and resolve the write-lock bug blocking TUI development"
 WhenToUse: "When debugging CozoDB write failures through the Go CGO binding"
 ---
@@ -30,7 +31,10 @@ WhenToUse: "When debugging CozoDB write failures through the Go CGO binding"
 
 ## Status
 
-Root cause confirmed. This is not a `cozoapi` logic bug; it is a binding-level C API signature mismatch in `cozo-lib-go@v0.7.5`.
+Root cause confirmed and project-level mitigation implemented.
+
+- Upstream/root issue: binding-level C API signature mismatch in `cozo-lib-go@v0.7.5`.
+- Local/project status: unblocked by migrating adapter to `github.com/kraklabs/cie/pkg/cozodb@v0.7.20`.
 
 ## Summary
 
@@ -47,7 +51,8 @@ This happens at the lowest possible level — calling `cozo.CozoDB.Run()` direct
 | Component | Version |
 |---|---|
 | Go | 1.25.7 linux/amd64 |
-| cozo-lib-go | v0.7.5 |
+| cozo-lib-go (failing repro) | v0.7.5 |
+| cie/pkg/cozodb (mitigation) | v0.7.20 |
 | libcozo_c.a | v0.7.5 (`libcozo_c-0.7.5-x86_64-unknown-linux-gnu.a.gz`) |
 | OS | Ubuntu 24.04 (Linux 6.8.0-90-generic) |
 
@@ -136,11 +141,22 @@ So the static library itself is not read-only; the failure is in the Go binding 
 
 This blocks all TUI development — we can't create schemas, insert data, or run any mutations through the Go binding. Read queries would work if relations existed, but we can't create them.
 
+## Project Fix (Implemented)
+
+Applied mitigation in `cozodb-goja` by replacing the adapter wrapper from `cozo-lib-go` to `cie/pkg/cozodb@v0.7.20`.
+
+Validation after migration:
+
+- `scripts/01-cozo-write-lock-repro.go` now reports `<nil>` for all mutation tests.
+- read query at the end returns created data (`headers: [id val]`, rows contain inserted tuple).
+- adapter export/import path also works via COJS-02 validation script.
+
 ## Workarounds
 
-1. **Patch/fork `cozo-lib-go`** so `Run` calls the 4-arg `cozo_run_query(..., immutable_query)` signature.
-2. **Bypass `cozo-lib-go`** and call C API directly from our adapter with correct signature (already validated in script 03).
-3. **Use CozoDB HTTP API** for write paths until the Go binding is fixed upstream.
+1. **Applied:** migrated adapter to `github.com/kraklabs/cie/pkg/cozodb@v0.7.20` (correct 4-arg call path).
+2. **Alternative:** patch/fork `cozo-lib-go` so `Run` calls `cozo_run_query(..., immutable_query)`.
+3. **Alternative:** bypass wrapper and call C API directly from adapter (validated in script 03).
+4. **Alternative:** use CozoDB HTTP API for writes until upstream wrapper is fixed.
 
 ## Repro Scripts
 

@@ -37,7 +37,15 @@
 - [x] `P5-T4` Run `docmgr doctor --ticket COJS-02-REAL-BACKEND-WIRING --stale-after 30`.
 - [x] `P5-T5` Commit in focused slices as tasks complete.
 
+### Phase 6: Mutation-lock fix and wrapper migration
+
+- [x] `P6-T1` Replace `cozo-lib-go` adapter usage with `github.com/kraklabs/cie/pkg/cozodb@v0.7.20`.
+- [x] `P6-T2` Update adapter execution path to use `RunReadOnly` when `opts.Immutable=true`.
+- [x] `P6-T3` Adapt `Export/Import` to JSON payload/response model used by `cie/pkg/cozodb`.
+- [x] `P6-T4` Add and run tracked validation scripts for write-lock regression and export/import path.
+- [x] `P6-T5` Re-run `go test ./...` and `GOWORK=off go test ./...` after migration.
+
 ## Notes
 
 - Tagged backend target: `-tags cozo_cgo`.
-- Expected runtime dependency for tagged path: `libcozo_c` and Cozo headers from `cozo-lib-go`.
+- Expected runtime dependency for tagged path: `libcozo_c` static library (local `.deps/cozo` path used in scripts).

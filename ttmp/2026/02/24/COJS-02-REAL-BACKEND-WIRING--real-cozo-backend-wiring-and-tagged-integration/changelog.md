@@ -36,3 +36,15 @@ Executed COJS-02 setup scripts; downloaded libcozo_c and successfully ran tagged
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/01-download-libcozo-c.sh — Downloaded native static library for local linking
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/02-run-cozocgo-smoke.sh — Executed tagged runtime smoke command with CGO_LDFLAGS
 
+
+## 2026-02-24
+
+Migrated tagged backend adapter from `cozo-lib-go` to `github.com/kraklabs/cie/pkg/cozodb@v0.7.20` to fix mutation lock failures, added immutable/read-only routing, updated JSON-based export/import handling, and added retroactive tracked validation scripts.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/cozocgo/adapter_cozo_cgo.go — Adapter now uses `cie/pkg/cozodb` API and parses export envelopes
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/go.mod — Added `github.com/kraklabs/cie@v0.7.20`
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/03-cozocgo-export-import-repro.go — Repro for backend export/import roundtrip
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/04-run-cozocgo-write-lock-repro.sh — Wrapper script to run CO-04 write-lock repro
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/05-run-cozocgo-export-import-repro.sh — Wrapper script to run export/import repro

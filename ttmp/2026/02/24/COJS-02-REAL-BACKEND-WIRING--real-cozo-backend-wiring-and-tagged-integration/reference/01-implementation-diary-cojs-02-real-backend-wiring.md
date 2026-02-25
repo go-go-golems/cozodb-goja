@@ -13,7 +13,7 @@ Intent: long-term
 Owners: []
 RelatedFiles:
     - Path: pkg/cozoapi/cozocgo/adapter_cozo_cgo.go
-      Note: Real cozo-lib-go backend implementation behind cozo_cgo tag
+      Note: Tagged backend implementation using cie/pkg/cozodb wrapper
     - Path: pkg/cozoapi/cozocgo/adapter_stub.go
       Note: Default non-tag fallback behavior
     - Path: pkg/cozoapi/cozocgo/types.go
@@ -28,11 +28,17 @@ RelatedFiles:
       Note: Download and extract libcozo_c static library for tagged builds
     - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/02-run-cozocgo-smoke.sh
       Note: Tagged smoke runner using CGO_LDFLAGS and cozo_cgo tag
+    - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/03-cozocgo-export-import-repro.go
+      Note: Direct adapter export/import roundtrip validation script
+    - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/04-run-cozocgo-write-lock-repro.sh
+      Note: Wrapper to run CO-04 write-lock regression script with correct flags
+    - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/05-run-cozocgo-export-import-repro.sh
+      Note: Wrapper to run export/import repro script with correct flags
     - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/tasks.md
       Note: Execution checklist for COJS-02 implementation
 ExternalSources: []
 Summary: Chronological implementation log for COJS-02 real Cozo backend wiring and tagged integration.
-LastUpdated: 2026-02-25T00:41:00-05:00
+LastUpdated: 2026-02-25T01:05:00-05:00
 WhatFor: Preserve exact command trail, failures, and decisions while wiring real Cozo backend support.
 WhenToUse: Use when reviewing why backend/tagged integration decisions were made and how to validate them.
 ---
@@ -341,3 +347,91 @@ The result confirms the integration is operational on this machine for the smoke
 ### Technical details
 
 - Smoke output includes `backend:cozocgo` and method exports, indicating successful tagged runtime initialization.
+
+## Step 5: Fix mutation lock by migrating adapter to `cie/pkg/cozodb` and add retroactive scripts
+
+This step addressed the confirmed ABI mismatch in `cozo-lib-go@v0.7.5` by migrating the tagged adapter to `github.com/kraklabs/cie/pkg/cozodb@v0.7.20`, which calls the 4-argument `cozo_run_query` signature.
+
+I also retroactively moved ad-hoc validation work into ticket-tracked scripts, as requested, so every probe command now has a committed script reference.
+
+### Prompt Context
+
+**User prompt (verbatim):** "https://pkg.go.dev/github.com/kraklabs/cie/pkg/cozodb?tab=versions https://pkg.go.dev/github.com/kraklabs/cie@v0.7.20/pkg/cozodb is the latest version. I think you should fix it and give them a solid report on how you did" and "Store scripts in the ticket's scripts/ folder so we can keep track. Retroactively too"
+
+**Assistant interpretation:** Replace broken wrapper path with the recommended latest wrapper, validate the write path and export/import path end-to-end, and preserve validation as ticket scripts.
+
+**Inferred user intent:** Ship a practical unblocking fix now and leave a reproducible audit trail.
+
+**Commit (code):** pending
+
+### What I did
+
+- Migrated adapter dependency in code:
+  - `pkg/cozoapi/cozocgo/adapter_cozo_cgo.go`
+  - from `github.com/cozodb/cozo-lib-go` to `github.com/kraklabs/cie/pkg/cozodb`.
+- Updated adapter semantics for new wrapper API:
+  - `Exec`: calls `RunReadOnly` when `opts.Immutable == true`, else `Run`.
+  - `Export`: marshals request `{"relations":[...]}`, parses `{ok,data,...}` envelope.
+  - `Import`: marshals relation payload map to JSON string before `ImportRelations`.
+- Added module dependency:
+  - `go get github.com/kraklabs/cie/pkg/cozodb@v0.7.20`
+- Added retroactive tracked scripts:
+  - `scripts/03-cozocgo-export-import-repro.go`
+  - `scripts/04-run-cozocgo-write-lock-repro.sh`
+  - `scripts/05-run-cozocgo-export-import-repro.sh`
+- Converted CO-04 repro `.go` files to `//go:build ignore` tracking scripts so they remain runnable by path but no longer break `go test ./...` package builds.
+
+### Why
+
+- `cozo-lib-go@v0.7.5` is proven broken for mutations in this environment due C ABI mismatch.
+- `cie/pkg/cozodb@v0.7.20` uses the correct 4-arg query call and restores write behavior.
+- Ticket-owned scripts make validation reproducible and reviewable.
+
+### What worked
+
+- Write-lock regression script now passes end-to-end:
+  - `bash .../scripts/04-run-cozocgo-write-lock-repro.sh`
+  - all mutation tests report `<nil>` errors; read query returns created rows.
+- Export/import path works through adapter:
+  - `bash .../scripts/05-run-cozocgo-export-import-repro.sh`
+  - export returns expected headers/rows and import adds new row.
+- Validation:
+  - `go test ./...` passed.
+  - `GOWORK=off go test ./...` passed.
+
+### What didn't work
+
+- `make lint` still fails on unrelated pre-existing issues in untracked TUI files:
+  - `cmd/cozo-tui/main.go` (`errcheck`)
+  - `internal/tui/screens/dashboard/model.go` (`SA4005`)
+
+### What I learned
+
+- `cie@v0.7.20` bundles `libcozo_c.a` but on this machine that archive lacks a linker index; using local `.deps/cozo` via `CGO_LDFLAGS` remains the reliable path.
+
+### What was tricky to build
+
+- The wrapper switch required careful conversion from typed-map import/export APIs to JSON string payload APIs while preserving `cozoapi` contract types.
+
+### What warrants a second pair of eyes
+
+- Evaluate whether to standardize linker setup so `CGO_LDFLAGS` can be optional in local workflows.
+
+### What should be done in the future
+
+- Consider adding a small tagged CI smoke target that runs script `05` when native lib prerequisites are available.
+
+### Code review instructions
+
+- Review adapter migration first:
+  - `pkg/cozoapi/cozocgo/adapter_cozo_cgo.go`
+- Then verify scripted evidence:
+  - `ttmp/.../scripts/04-run-cozocgo-write-lock-repro.sh`
+  - `ttmp/.../scripts/05-run-cozocgo-export-import-repro.sh`
+
+### Technical details
+
+- Repro commands run:
+  - `CGO_LDFLAGS="-L$PWD/.deps/cozo" go test -tags cozo_cgo ./pkg/cozoapi/cozocgo ./pkg/cozoapi/module`
+  - `bash ttmp/.../scripts/04-run-cozocgo-write-lock-repro.sh`
+  - `bash ttmp/.../scripts/05-run-cozocgo-export-import-repro.sh`
