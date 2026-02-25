@@ -6,3 +6,4 @@
 - Added detailed F8 implementation design document with architecture, message flow, import pipeline, and test plan.
 - Added granular workstream task checklist for execution.
 - Added CO-08 diary and related-file links; queued implementation behind CO-07 completion.
+- Completed Workstream A scaffold in extraction repo (commit `ebe1940`): added `internal/tui/screens/extraction/model.go` and wired F8 routing/view/resize/status tab in app router.

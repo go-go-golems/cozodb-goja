@@ -2,13 +2,13 @@
 
 ## Workstream A: Screen Scaffold and Routing
 
-- [ ] Create `internal/tui/screens/extraction/model.go`
-- [ ] Add extraction screen model constructor
-- [ ] Add screen enum value in app router
-- [ ] Add `F8` key routing in app update loop
-- [ ] Add extraction screen view branch in app view
-- [ ] Add extraction screen resize branch
-- [ ] Add status bar tab label `[F8]Extract`
+- [x] Create `internal/tui/screens/extraction/model.go`
+- [x] Add extraction screen model constructor
+- [x] Add screen enum value in app router
+- [x] Add `F8` key routing in app update loop
+- [x] Add extraction screen view branch in app view
+- [x] Add extraction screen resize branch
+- [x] Add status bar tab label `[F8]Extract`
 
 ## Workstream B: Plugin Discovery and Selection UX
 
