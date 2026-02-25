@@ -11,23 +11,35 @@ DocType: design
 Intent: long-term
 Owners: []
 RelatedFiles:
-    - Path: 2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
-      Note: Runtime host used for plugin execution and embeddings
-    - Path: 2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader.go
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/host.go
+      Note: |-
+        Runtime host used for plugin execution and embeddings
+        Descriptor loading helper used by plugin discovery
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/plugins/loader.go
       Note: Plugin discovery and validation used by F8
-    - Path: 2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
-      Note: App-level F8 routing and key handling integration point
-    - Path: 2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/seeddata/seed.go
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model.go
+      Note: |-
+        App-level F8 routing and key handling integration point
+        F8 route integration in app shell
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer.go
+      Note: Import mapping and execution helper
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer_test.go
+      Note: Phase 4 importer tests
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go
+      Note: Phase 4 extraction monitor implementation
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model_test.go
+      Note: Phase 4 model tests
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/seeddata/seed.go
       Note: Schema assumptions for import destination relations
-    - Path: 2026-02-18--cozodb-extraction/cozo-relationship-js-runner/scripts/lib/relationship_constants.js
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-relationship-js-runner/scripts/lib/relationship_constants.js
       Note: |-
         Extraction payload schema conventions
         extraction payload shape conventions
-    - Path: cozodb-goja/pkg/cozoapi/relation.go
+    - Path: pkg/cozoapi/relation.go
       Note: |-
         Relation-level mutation methods used for import flow
         relation mutation semantics for import flow
-    - Path: cozodb-goja/ttmp/2026/02/24/CO-05--extraction-pipeline-and-vector-search-for-tui/design/02-geppetto-extraction-and-vector-search-implementation-guide.md
+    - Path: ttmp/2026/02/24/CO-05--extraction-pipeline-and-vector-search-for-tui/design/02-geppetto-extraction-and-vector-search-implementation-guide.md
       Note: phase-4 context and prior design details
 ExternalSources: []
 Summary: 'Detailed implementation plan for F8 extraction monitor: plugin UX, async execution, preview/diff, atomic import flow, and failure-safe behavior'
@@ -35,6 +47,7 @@ LastUpdated: 2026-02-25T12:08:00-05:00
 WhatFor: Execution spec for implementing extraction monitor behavior in relocated TUI
 WhenToUse: Use while building and validating phase 4
 ---
+
 
 
 # CO-08 Implementation Plan (Phase 4 / F8 Extraction Monitor)

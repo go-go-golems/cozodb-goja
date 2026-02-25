@@ -66,50 +66,50 @@
 
 ## Workstream G: Import Execution Path
 
-- [ ] Create `importer.go` helper
-- [ ] Map persons extraction rows to relation rows
-- [ ] Map relationships extraction rows to relation rows
-- [ ] Map behaviors extraction rows to relation rows
-- [ ] Map events extraction rows to relation rows
-- [ ] Implement deterministic upsert via relation API
-- [ ] Add atomic write path (preferred)
-- [ ] Add fallback/explicit error summary if partial-write risk
-- [ ] Add `importStartedMsg`
-- [ ] Add `importSuccessMsg`
-- [ ] Add `importErrorMsg`
-- [ ] Implement key binding `i` for import
+- [x] Create `importer.go` helper
+- [x] Map persons extraction rows to relation rows
+- [x] Map relationships extraction rows to relation rows
+- [x] Map behaviors extraction rows to relation rows
+- [x] Map events extraction rows to relation rows
+- [x] Implement deterministic upsert via relation API
+- [x] Add atomic write path (preferred)
+- [x] Add fallback/explicit error summary if partial-write risk
+- [x] Add `importStartedMsg`
+- [x] Add `importSuccessMsg`
+- [x] Add `importErrorMsg`
+- [x] Implement key binding `i` for import
 
 ## Workstream H: Export Path
 
-- [ ] Implement JSON marshaling for `lastResult`
-- [ ] Add output path resolution policy
-- [ ] Write export file with predictable naming
-- [ ] Implement key binding `e` for export
-- [ ] Add export success/failure status messaging
+- [x] Implement JSON marshaling for `lastResult`
+- [x] Add output path resolution policy
+- [x] Write export file with predictable naming
+- [x] Implement key binding `e` for export
+- [x] Add export success/failure status messaging
 
 ## Workstream I: Runtime and Error Hardening
 
-- [ ] Handle plugin panic as surfaced run error
-- [ ] Handle malformed plugin output decode error
-- [ ] Handle unreadable file input errors
-- [ ] Ensure no screen panic on nil `lastResult`
-- [ ] Ensure error status is visible and persisted until next action
+- [x] Handle plugin panic as surfaced run error
+- [x] Handle malformed plugin output decode error
+- [x] Handle unreadable file input errors
+- [x] Ensure no screen panic on nil `lastResult`
+- [x] Ensure error status is visible and persisted until next action
 
 ## Workstream J: Test Coverage
 
-- [ ] Add unit tests for import preview builder
-- [ ] Add unit tests for key normalization helpers
-- [ ] Add screen update tests for run success path
-- [ ] Add screen update tests for run error path
-- [ ] Add screen update tests for import success path
-- [ ] Add screen update tests for import error path
-- [ ] Add integration test running fixture plugin
-- [ ] Add integration test importing fixture payload to test DB
+- [x] Add unit tests for import preview builder
+- [x] Add unit tests for key normalization helpers
+- [x] Add screen update tests for run success path
+- [x] Add screen update tests for run error path
+- [x] Add screen update tests for import success path
+- [x] Add screen update tests for import error path
+- [x] Add integration test running fixture plugin
+- [x] Add integration test importing fixture payload to test DB
 
 ## Workstream K: Quality and Ticket Hygiene
 
-- [ ] Run `gofmt` on all CO-08 code changes
-- [ ] Run module test suite (`go test ./... -count=1`)
-- [ ] Update CO-08 changelog with implementation progress
-- [ ] Relate modified files to CO-08 design doc
-- [ ] Run `docmgr doctor --ticket CO-08 --stale-after 30`
+- [x] Run `gofmt` on all CO-08 code changes
+- [x] Run module test suite (`go test ./... -count=1`)
+- [x] Update CO-08 changelog with implementation progress
+- [x] Relate modified files to CO-08 design doc
+- [x] Run `docmgr doctor --ticket CO-08 --stale-after 30`

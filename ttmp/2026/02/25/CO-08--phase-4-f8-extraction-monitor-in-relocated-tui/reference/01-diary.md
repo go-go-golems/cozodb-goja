@@ -17,6 +17,10 @@ RelatedFiles:
       Note: F8 routing and tab integration
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/app/model_parity_test.go
       Note: F8 hotkey parity assertion
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer.go
+      Note: Workstream G import mapping and execution helper
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer_test.go
+      Note: Workstream J importer integration tests
     - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go
       Note: |-
         CO-08 Workstream A extraction screen scaffold
@@ -25,6 +29,9 @@ RelatedFiles:
         Workstream D async run lifecycle and state retention
         Workstream E preview grouping and cursor/detail UX
         Workstream F import preview validation and gating
+        Workstream G/H/I import-export-message flow and hardening
+    - Path: ../../../../../../../2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model_test.go
+      Note: Workstream J extraction model tests
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -35,6 +42,8 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
+
 
 
 
@@ -504,3 +513,194 @@ The `i` action now respects this gate, blocking import requests when critical va
 
 ### Technical details
 - Import gating currently treats empty extraction payload as non-importable (`CanImport=false`).
+
+## Step 8: Add Import Execution Command and Relation Mapping Helper (Workstream G)
+
+This step adds the first executable import path. The extraction screen now dispatches import lifecycle messages and uses a dedicated `importer.go` helper to map extraction groups into Cozo relation-row structures.
+
+Import execution is performed through a single `db.Import(...)` call with explicit error wording that no fallback partial write is attempted.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue implementing remaining CO-08 workstreams in small commits.
+
+**Inferred user intent:** Move from preview-only state to a concrete DB write path while preserving safety semantics.
+
+**Commit (code):** `afb697c` — "co-08: add import execution path and relation row mapping"
+
+### What I did
+- Added `internal/tui/screens/extraction/importer.go` with:
+  - `ImportSummary`
+  - `ImportExtraction(...)`
+  - relation mapping helpers for `person`, `relationship`, `behavior`, `event`
+- Added import lifecycle messages and state in extraction model:
+  - `importStartedMsg`
+  - `importSuccessMsg`
+  - `importErrorMsg`
+- Wired `i` key to execute `importCmd(...)` when preview gate allows import.
+- Added import status rendering (`importing`, last import summary).
+- Maintained fail-safe behavior: if atomic import fails, no fallback partial write attempt is executed.
+- Re-ran validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream G requires a concrete import execution flow tied to preview gating.
+
+### What worked
+- Import command flow compiles and is fully message-driven.
+- Relation-row mapping exists for all four extraction groups.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Using one import helper file keeps mapping policy centralized and testable.
+
+### What was tricky to build
+- Normalizing heterogeneous extraction row keys (for example `from` vs `from_person`, `type` vs `relationship_type`) while preserving deterministic relation headers.
+
+### What warrants a second pair of eyes
+- Mapping rules and numeric coercion (`strength`) should be reviewed against final plugin payload contracts.
+
+### What should be done in the future
+- Add Workstream J tests for mapping and import success/error state transitions.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Import path currently relies on `db.Import(...)` as the atomic write primitive.
+
+## Step 9: Add Export Command and Error-Hardening Status Paths (Workstream H/I)
+
+This step added export capability and completed core runtime/error hardening checks for the screen state machine. Export now writes deterministic JSON files and reports file path/status in the UI.
+
+Alongside export, run/import/export flows keep surfacing failures through persistent status text without nil-result panics.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue with remaining operational workstreams and keep ticket notes current.
+
+**Inferred user intent:** Ensure monitor is operationally useful and failure-transparent.
+
+**Commit (code):** `30ce81f` — "co-08: add extraction result export path and status flow"
+
+### What I did
+- Added export lifecycle messages:
+  - `exportSuccessMsg`
+  - `exportErrorMsg`
+- Implemented `exportCmd(...)`:
+  - marshals `lastResult` to JSON
+  - resolves output path under `./exports`
+  - writes predictable filename with plugin ID + timestamp
+- Added `e` key behavior with no-result guard.
+- Added export status state (`lastExportPath`) in UI panel.
+- Verified existing hardening conditions:
+  - run panic/decode/file errors are surfaced through status
+  - nil-result guards block invalid run/import/export actions
+  - error status persists until subsequent action updates it
+- Re-ran validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream H requires real export capability; Workstream I requires resilient error handling behavior.
+
+### What worked
+- Export path now produces files with deterministic naming policy.
+- Failure states remain visible without crashing screen updates.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Treating export as a command-message flow (instead of inline file write in key handler) keeps UI update logic clean and test-friendly.
+
+### What was tricky to build
+- Filename sanitization for plugin IDs had to avoid path/character issues while preserving traceability.
+
+### What warrants a second pair of eyes
+- Export directory policy (`./exports`) may need configurable override before broader use.
+
+### What should be done in the future
+- Add Workstream J tests for export path resolution and error cases.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Export filename pattern: `extraction-<plugin-id>-<YYYYMMDD-HHMMSS>.json`.
+
+## Step 10: Add Extraction Screen and Importer Test Coverage (Workstream J)
+
+This step adds explicit tests for the new F8 extraction logic and importer mapping behavior. The tests cover validation helpers, state transitions, fixture plugin execution, and fake-DB import integration.
+
+These tests establish a baseline regression harness for the phase-4 implementation.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Finish quality gates and verify behavior with concrete tests.
+
+**Inferred user intent:** Avoid shipping F8 logic without executable guardrails.
+
+**Commit (code):** `0b54ccb` — "co-08: add extraction screen and importer test coverage"
+
+### What I did
+- Added `internal/tui/screens/extraction/model_test.go` covering:
+  - import preview builder diagnostics
+  - key normalization helper behavior
+  - run success/error update paths
+  - import success/error update paths
+  - fixture plugin integration via `runPluginCmd`
+- Added `internal/tui/screens/extraction/importer_test.go` covering:
+  - importer integration against fake DB
+  - empty payload rejection behavior
+- Ran full module test suite:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream J requires direct coverage for preview, run/import state transitions, and integration pathways.
+
+### What worked
+- New extraction package tests pass in default environment.
+- Integration tests verify fixture plugin execution and importer path behavior.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Testing `runPluginCmd` directly provides fast confidence on host/runtime wiring without full Bubble Tea harness overhead.
+
+### What was tricky to build
+- Computing a stable fixture script path from package test working directory required explicit relative traversal to module root.
+
+### What warrants a second pair of eyes
+- Additional tests for export command behavior and error-path file I/O can further harden Workstream H.
+
+### What should be done in the future
+- Add end-to-end TUI interaction tests if/when a stable harness for key-driven screen simulations is introduced.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model_test.go`
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/importer_test.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Importer integration test uses `cozoapi/fakebackend` so it runs without `cozo_cgo` requirements.
