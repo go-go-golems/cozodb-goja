@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/evolution"
 	"github.com/go-go-golems/cozodb-goja/pkg/cozoapi"
 )
 
@@ -107,6 +108,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.filtering = true
 			m.filterInput = m.personFilter
 			return m, nil
+		case "enter":
+			if m.cursor < len(m.filtered) {
+				r := m.filtered[m.cursor]
+				return m, func() tea.Msg {
+					return evolution.NavigateMsg{
+						FromPerson: r.fromPerson,
+						ToPerson:   r.toPerson,
+					}
+				}
+			}
 		case "r":
 			m.loading = true
 			return m, fetchRelationships(m.db)

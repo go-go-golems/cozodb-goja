@@ -6,9 +6,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/dashboard"
+	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/evolution"
+	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/network"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/people"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/query"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/relationships"
+	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/timeline"
 	"github.com/go-go-golems/cozodb-goja/pkg/cozoapi"
 )
 
@@ -18,6 +21,9 @@ const (
 	screenDashboard screen = iota
 	screenPeople
 	screenRelationships
+	screenEvolution
+	screenNetwork
+	screenTimeline
 	screenQuery
 )
 
@@ -31,6 +37,9 @@ type Model struct {
 	dashboard     dashboard.Model
 	people        people.Model
 	relationships relationships.Model
+	evolution     evolution.Model
+	network       network.Model
+	timeline      timeline.Model
 	query         query.Model
 }
 
@@ -40,8 +49,11 @@ func New(db *cozoapi.DB) Model {
 		dashboard:     dashboard.New(db),
 		people:        people.New(db),
 		relationships: relationships.New(db),
+		evolution:     evolution.New(db),
+		network:       network.New(db),
+		timeline:      timeline.New(db),
 		query:         query.New(db),
-		screen:    screenDashboard,
+		screen:        screenDashboard,
 	}
 }
 
@@ -54,8 +66,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
-			// Only quit from non-text-input screens
-			if m.screen == screenDashboard || m.screen == screenPeople || m.screen == screenRelationships {
+			if m.screen != screenQuery {
 				_ = m.db.Close(context.Background())
 				return m, tea.Quit
 			}
@@ -77,6 +88,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.relationships.Init()
 			}
 			return m, nil
+		case "f4":
+			m.screen = screenEvolution
+			return m, nil
+		case "f5":
+			if m.screen != screenNetwork {
+				m.screen = screenNetwork
+				return m, m.network.Init()
+			}
+			return m, nil
+		case "f6":
+			if m.screen != screenTimeline {
+				m.screen = screenTimeline
+				return m, m.timeline.Init()
+			}
+			return m, nil
 		case "f7":
 			if m.screen != screenQuery {
 				m.screen = screenQuery
@@ -84,6 +110,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
+
+	case evolution.NavigateMsg:
+		m.evolution.SetParams(msg.FromPerson, msg.ToPerson)
+		m.screen = screenEvolution
+		return m, m.evolution.Init()
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -91,7 +123,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dashboard.SetSize(msg.Width, contentH)
 		m.people.SetSize(msg.Width, contentH)
 		m.relationships.SetSize(msg.Width, contentH)
+		m.evolution.SetSize(msg.Width, contentH)
+		m.network.SetSize(msg.Width, contentH)
+		m.timeline.SetSize(msg.Width, contentH)
 		m.query.SetSize(msg.Width, contentH)
+
 	case errMsg:
 		m.err = msg.err
 	}
@@ -104,6 +140,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.people, cmd = m.people.Update(msg)
 	case screenRelationships:
 		m.relationships, cmd = m.relationships.Update(msg)
+	case screenEvolution:
+		m.evolution, cmd = m.evolution.Update(msg)
+	case screenNetwork:
+		m.network, cmd = m.network.Update(msg)
+	case screenTimeline:
+		m.timeline, cmd = m.timeline.Update(msg)
 	case screenQuery:
 		m.query, cmd = m.query.Update(msg)
 	}
@@ -117,9 +159,12 @@ func (m Model) View() string {
 		name   string
 		active bool
 	}{
-		{"F1", "Dashboard", m.screen == screenDashboard},
+		{"F1", "Dash", m.screen == screenDashboard},
 		{"F2", "People", m.screen == screenPeople},
 		{"F3", "Rels", m.screen == screenRelationships},
+		{"F4", "Evol", m.screen == screenEvolution},
+		{"F5", "Graph", m.screen == screenNetwork},
+		{"F6", "Time", m.screen == screenTimeline},
 		{"F7", "Query", m.screen == screenQuery},
 	}
 	for _, s := range screens {
@@ -151,6 +196,12 @@ func (m Model) View() string {
 		content = m.people.View()
 	case screenRelationships:
 		content = m.relationships.View()
+	case screenEvolution:
+		content = m.evolution.View()
+	case screenNetwork:
+		content = m.network.View()
+	case screenTimeline:
+		content = m.timeline.View()
 	case screenQuery:
 		content = m.query.View()
 	}
