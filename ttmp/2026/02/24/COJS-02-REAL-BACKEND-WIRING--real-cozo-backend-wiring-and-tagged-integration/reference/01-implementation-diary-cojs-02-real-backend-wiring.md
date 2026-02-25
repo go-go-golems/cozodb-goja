@@ -24,6 +24,10 @@ RelatedFiles:
       Note: DefaultOpen forwarding into cozocgo adapter
     - Path: pkg/cozoapi/module/default_open_test.go
       Note: Tests for forwarding and default engine behavior
+    - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/01-download-libcozo-c.sh
+      Note: Download and extract libcozo_c static library for tagged builds
+    - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/scripts/02-run-cozocgo-smoke.sh
+      Note: Tagged smoke runner using CGO_LDFLAGS and cozo_cgo tag
     - Path: ttmp/2026/02/24/COJS-02-REAL-BACKEND-WIRING--real-cozo-backend-wiring-and-tagged-integration/tasks.md
       Note: Execution checklist for COJS-02 implementation
 ExternalSources: []
@@ -32,6 +36,7 @@ LastUpdated: 2026-02-25T00:41:00-05:00
 WhatFor: Preserve exact command trail, failures, and decisions while wiring real Cozo backend support.
 WhenToUse: Use when reviewing why backend/tagged integration decisions were made and how to validate them.
 ---
+
 
 
 # Diary
@@ -206,3 +211,133 @@ Validation included workspace and module test modes, lint, and an explicit tagge
   - `go run -tags cozo_cgo ./cmd/XXX --eval 'require("cozodb").open({backend:"cozocgo"})'`
 - Key blocker:
   - Linker cannot find `-lcozo_c` on current machine.
+
+## Step 3: Add reusable install/run scripts (not executed)
+
+This step added script artifacts requested by the user to the COJS-02 ticket `scripts/` directory so the native library setup and tagged smoke run commands are stored in one reproducible place.
+
+Per explicit instruction, the scripts were created and made executable but not run.
+
+### Prompt Context
+
+**User prompt (verbatim):** "do store them in the scripts/ folder . don't run just yet"
+
+**Assistant interpretation:** Save the previously discussed install and smoke commands as scripts under the ticket scripts directory, without executing them.
+
+**Inferred user intent:** Preserve commands for repeatable later use while avoiding immediate side effects.
+
+**Commit (code):** pending
+
+### What I did
+
+- Added script:
+  - `scripts/01-download-libcozo-c.sh`
+  - downloads and extracts `libcozo_c.a` into `.deps/cozo`.
+- Added script:
+  - `scripts/02-run-cozocgo-smoke.sh`
+  - runs tagged smoke command using `CGO_LDFLAGS` and `-tags cozo_cgo`.
+- Marked both scripts executable with `chmod +x`.
+- Did not execute either script.
+
+### Why
+
+- Keeps native setup/run commands close to ticket context and easy to reuse.
+
+### What worked
+
+- Scripts were added successfully in the requested location.
+
+### What didn't work
+
+- N/A.
+
+### What I learned
+
+- N/A.
+
+### What was tricky to build
+
+- Ensuring scripts resolve repository root reliably from nested ticket paths; both scripts use `git rev-parse --show-toplevel` for root detection.
+
+### What warrants a second pair of eyes
+
+- Confirm preferred default output path for downloaded static library (`.deps/cozo`).
+
+### What should be done in the future
+
+- Execute script 1, then script 2 when ready for native verification.
+
+### Code review instructions
+
+- Review:
+  - `ttmp/.../scripts/01-download-libcozo-c.sh`
+  - `ttmp/.../scripts/02-run-cozocgo-smoke.sh`
+
+### Technical details
+
+- No runtime commands were executed in this step.
+
+## Step 4: Execute setup scripts and verify tagged runtime
+
+After script creation, this step executed both scripts in sequence to prove the tagged runtime path can run when `libcozo_c` is available locally and `CGO_LDFLAGS` points at it.
+
+The result confirms the integration is operational on this machine for the smoke scenario (`open({ backend: "cozocgo" })`).
+
+### Prompt Context
+
+**User prompt (verbatim):** "then run it and make sure you can actually run this thing. Is that because we are doing a raw integration, and not using the go module?"
+
+**Assistant interpretation:** Execute the stored scripts now, verify real tagged runtime behavior, and clarify the root cause of previous linker errors.
+
+**Inferred user intent:** Validate that backend wiring is truly runnable and understand the dependency model.
+
+**Commit (code):** pending
+
+### What I did
+
+- Ran script 1:
+  - `bash .../scripts/01-download-libcozo-c.sh`
+- Ran script 2:
+  - `bash .../scripts/02-run-cozocgo-smoke.sh`
+
+### Why
+
+- Needed concrete runtime confirmation beyond compile/test signals.
+
+### What worked
+
+- Download step succeeded and produced:
+  - `.deps/cozo/libcozo_c.a`
+- Tagged smoke command succeeded and returned the db handle object containing:
+  - `backend: cozocgo`
+  - API methods (`exec`, `q`, `cq`, `atomic`, `rel`, `export`, `import`, `close`).
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The previous failure was environmental linker configuration, not adapter logic.
+
+### What was tricky to build
+
+- N/A.
+
+### What warrants a second pair of eyes
+
+- Whether to formalize `.deps/cozo` in local dev documentation or provide an automated preflight check in the CLI.
+
+### What should be done in the future
+
+- Optionally add a `make` target for tagged smoke that validates `libcozo_c.a` presence before build.
+
+### Code review instructions
+
+- Re-run these exact commands:
+  - `bash ttmp/.../scripts/01-download-libcozo-c.sh`
+  - `bash ttmp/.../scripts/02-run-cozocgo-smoke.sh`
+
+### Technical details
+
+- Smoke output includes `backend:cozocgo` and method exports, indicating successful tagged runtime initialization.
