@@ -23,6 +23,7 @@ RelatedFiles:
         Workstream B plugin discovery and overlay implementation
         Workstream C input modes and transcript validation flow
         Workstream D async run lifecycle and state retention
+        Workstream E preview grouping and cursor/detail UX
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/design/01-implementation-plan-phase-4-f8-extraction-monitor.md
       Note: Phase 4 plan referenced by diary
     - Path: ttmp/2026/02/25/CO-08--phase-4-f8-extraction-monitor-in-relocated-tui/tasks.md
@@ -33,6 +34,7 @@ LastUpdated: 2026-02-25T12:35:00-05:00
 WhatFor: Track phase 4 extraction monitor implementation
 WhenToUse: Use when reviewing CO-08 execution progress
 ---
+
 
 
 
@@ -360,3 +362,76 @@ Importantly, failed reruns do not overwrite the prior successful result, so oper
 
 ### Technical details
 - Run command currently uses default timeout `120000ms` and records run completion timestamp for status reporting.
+
+## Step 6: Add Result Preview Grouping, Navigation, and Detail Pane (Workstream E)
+
+This step implemented the preview UX shell on top of `lastResult` so extraction payloads are inspectable in grouped form. The screen now tracks preview group and row cursor state, provides keyboard navigation, and renders selected-row detail key/value fields.
+
+The preview logic is defensive against missing or malformed payload shapes and handles empty groups without panics.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue CO-08 with the next workstream and keep the ticket diary synchronized.
+
+**Inferred user intent:** Make extraction output explorable before import logic is added.
+
+**Commit (code):** `5ccb221` — "co-08: add preview group navigation and detail rendering"
+
+### What I did
+- Added preview state fields:
+  - `previewGroup`
+  - `previewCursor`
+- Added keyboard behavior:
+  - `tab` cycles preview groups (`persons`, `relationships`, `behaviors`, `events`)
+  - `j/k` and arrows navigate rows in selected group
+- Added grouped preview rendering:
+  - count panel for all entity groups
+  - selected group indicator
+  - row list with cursor marker
+  - selected row detail key/value pane
+- Added helper functions for payload normalization:
+  - `previewGroups(...)`
+  - `asObjectRows(...)`
+  - `compactRowSummary(...)`
+  - `sortedKeys(...)`
+- Added safe reset behavior after successful run to choose first non-empty group.
+- Re-ran validation:
+  - `go test ./... -count=1`.
+
+### Why
+- Workstream E requires a usable result-preview layer before import gating and execution logic.
+
+### What worked
+- Preview rendering and navigation compile and run.
+- Empty or sparse payload groups do not crash rendering.
+
+### What didn't work
+- N/A in this step.
+
+### What I learned
+- Normalizing payload shapes up front makes UI logic significantly simpler and avoids repetitive type checks.
+
+### What was tricky to build
+- Balancing input keybindings between source-input widgets and preview navigation required careful ordering so global preview commands still work predictably.
+
+### What warrants a second pair of eyes
+- Group mapping policy (`people` fallback to `persons`) should be confirmed against expected plugin output contracts.
+
+### What should be done in the future
+- Implement Workstream F import-preview validation so preview groups also surface import readiness and errors.
+
+### Code review instructions
+- Start with:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/tui/screens/extraction/model.go`
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-02-24/cozodb-goja-init/2026-02-18--cozodb-extraction/cozo-extraction-tui`
+  - `go test ./... -count=1`
+
+### Technical details
+- Canonical preview groups are maintained as fixed keys in the order:
+  - `persons`
+  - `relationships`
+  - `behaviors`
+  - `events`

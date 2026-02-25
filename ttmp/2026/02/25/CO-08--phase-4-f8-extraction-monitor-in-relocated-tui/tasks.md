@@ -46,13 +46,13 @@
 
 ## Workstream E: Result Preview UX
 
-- [ ] Add grouped result counts panel (persons/rels/behaviors/events)
-- [ ] Add preview group selector state
-- [ ] Implement `tab` cycling across groups
-- [ ] Add preview row cursor state
-- [ ] Implement cursor key navigation
-- [ ] Render selected row detail pane
-- [ ] Handle empty-group preview gracefully
+- [x] Add grouped result counts panel (persons/rels/behaviors/events)
+- [x] Add preview group selector state
+- [x] Implement `tab` cycling across groups
+- [x] Add preview row cursor state
+- [x] Implement cursor key navigation
+- [x] Render selected row detail pane
+- [x] Handle empty-group preview gracefully
 
 ## Workstream F: Import Preview and Validation
 

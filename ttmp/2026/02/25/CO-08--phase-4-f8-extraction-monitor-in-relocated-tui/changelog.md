@@ -10,3 +10,4 @@
 - Completed Workstream B scaffold in extraction repo (commit `7487462`): added async plugin discovery, deterministic descriptor sorting, overlay list/detail panes, invalid-plugin diagnostics, and `p`-driven selection events.
 - Completed Workstream C scaffold in extraction repo (commit `6f646a1`): added file/manual transcript modes, source path input, manual textarea, `n` mode switching, and non-empty transcript validation before run trigger.
 - Completed Workstream D scaffold in extraction repo (commit `c9d1e13`): added async run message types, runtime-host run command wiring, concurrent-run guard, status transitions, and last-input/result retention semantics.
+- Completed Workstream E scaffold in extraction repo (commit `5ccb221`): added grouped result counts panel, preview group/cursor state, `tab` group cycling, row navigation, selected-row detail rendering, and empty-group handling.
