@@ -11,6 +11,8 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: ../../../../../../../go.work
+      Note: Workspace Go version alignment using go work use .
     - Path: cmd/XXX/main.go
       Note: CLI eval script repl runner (commit 7a4fabe)
     - Path: pkg/cozoapi/db.go
@@ -56,6 +58,7 @@ LastUpdated: 2026-02-24T17:42:00-05:00
 WhatFor: Preserve exact command trail, findings, minor failures, and design rationale used to produce the final research deliverable.
 WhenToUse: Use when reviewing or reproducing this ticket's research workflow.
 ---
+
 
 
 
@@ -777,3 +780,79 @@ The closure pass includes command outputs and blocker framing so future contribu
 - Passing command/output:
   - `GOWORK=off go test ./...` -> all packages in this repo pass.
   - `make lint` -> 0 issues.
+
+## Step 18: Workspace `go.work` Alignment and Confirmation
+
+This step addressed the remaining workspace-mode test blocker by updating the parent workspace file with `go work use .` from the `cozodb-goja` module. The command refreshed the workspace Go version to match module constraints and restored plain `go test ./...` behavior without forcing `GOWORK=off`.
+
+I also confirmed ticket inventory and verified diary status in response to direct user questions.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, continue. use go work use . to update go work. Doyou have ttickets? DId you update the diary?"
+
+**Assistant interpretation:** Continue work, run `go work use .` as requested, and explicitly report ticket and diary status.
+
+**Inferred user intent:** Ensure workspace tooling friction is removed and verify that process tracking (tickets + diary) is actually up to date.
+
+**Commit (code):** pending docs commit
+
+### What I did
+
+- Ran from module directory:
+  - `cd .../cozodb-goja && go work use .`
+- Verified updated parent workspace file:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/go.work`
+- Re-ran workspace-mode tests:
+  - `cd .../cozodb-goja && go test ./...`
+- Listed tickets and checked diary entries:
+  - `docmgr ticket list`
+  - `rg -n "Step 16|Step 17" .../01-investigation-diary-cozodb-goja-js-api.md`
+
+### Why
+
+- The unresolved blocker in Step 17 was not code quality; it was workspace metadata mismatch (`go.work` at `go 1.23` while modules required `>=1.25.7`).
+- The user explicitly requested applying `go work use .` and asked for process-state confirmation.
+
+### What worked
+
+- `go work use .` updated workspace Go version to `1.25.7` and kept the expected module list.
+- `go test ./...` now passes in normal workspace mode.
+- Ticket list confirms two active tickets and `COJS-01-INITIAL-BUILD` with implementation tasks complete.
+- Diary already contained Steps 16 and 17; this step adds the explicit workspace fix follow-up.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Workspace-mode health can diverge from module-mode health; both should be validated when using `go.work`.
+
+### What was tricky to build
+
+- The tricky part was scope ownership: `go.work` lives one level above repository git boundaries, so the operational fix is outside the `cozodb-goja` git history unless managed in a parent repository.
+
+### What warrants a second pair of eyes
+
+- Confirm whether parent workspace `go.work` is source-controlled elsewhere and should be committed by workspace owner.
+
+### What should be done in the future
+
+- Keep `go.work` refreshed when module `go` versions change to avoid false-negative CI/local failures.
+
+### Code review instructions
+
+- Inspect updated workspace file:
+  - `/home/manuel/workspaces/2026-02-24/cozodb-goja-init/go.work`
+- Re-run workspace-mode test from module:
+  - `go test ./...`
+
+### Technical details
+
+- Before:
+  - `go.work` had `go 1.23`
+  - `go test ./...` failed with module requires `go >= 1.25.7`.
+- After:
+  - `go.work` now has `go 1.25.7`
+  - `go test ./...` passes for `cozodb-goja`.

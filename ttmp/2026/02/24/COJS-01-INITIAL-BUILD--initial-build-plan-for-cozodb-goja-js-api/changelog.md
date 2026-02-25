@@ -75,3 +75,12 @@ Added goja module bridge, CLI runner, go-go-goja integration coverage, and lint 
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb.go — Promise-based require module API
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go — go-go-goja runtime integration test
 
+
+## 2026-02-24
+
+Updated parent workspace go.work via go work use . to Go 1.25.7; workspace-mode go test now passes for cozodb-goja.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/go.work — Updated workspace Go version and module list ordering
+
