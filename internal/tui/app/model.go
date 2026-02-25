@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/dashboard"
+	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/people"
 	"github.com/go-go-golems/cozodb-goja/internal/tui/screens/query"
 	"github.com/go-go-golems/cozodb-goja/pkg/cozoapi"
 )
@@ -14,17 +15,19 @@ type screen int
 
 const (
 	screenDashboard screen = iota
+	screenPeople
 	screenQuery
 )
 
 type Model struct {
-	db        *cozoapi.DB
-	width     int
-	height    int
-	err       error
-	screen    screen
+	db     *cozoapi.DB
+	width  int
+	height int
+	err    error
+	screen screen
 
 	dashboard dashboard.Model
+	people    people.Model
 	query     query.Model
 }
 
@@ -32,6 +35,7 @@ func New(db *cozoapi.DB) Model {
 	return Model{
 		db:        db,
 		dashboard: dashboard.New(db),
+		people:    people.New(db),
 		query:     query.New(db),
 		screen:    screenDashboard,
 	}
@@ -46,8 +50,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
-			// Only quit from dashboard; query console uses 'q' for text input
-			if m.screen == screenDashboard {
+			// Only quit from dashboard/people; query console uses 'q' for text input
+			if m.screen == screenDashboard || m.screen == screenPeople {
 				_ = m.db.Close(context.Background())
 				return m, tea.Quit
 			}
@@ -56,6 +60,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "f1":
 			m.screen = screenDashboard
+			return m, nil
+		case "f2":
+			if m.screen != screenPeople {
+				m.screen = screenPeople
+				return m, m.people.Init()
+			}
 			return m, nil
 		case "f7":
 			if m.screen != screenQuery {
@@ -67,8 +77,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		contentH := msg.Height - 1 // -1 for status bar
+		contentH := msg.Height - 1
 		m.dashboard.SetSize(msg.Width, contentH)
+		m.people.SetSize(msg.Width, contentH)
 		m.query.SetSize(msg.Width, contentH)
 	case errMsg:
 		m.err = msg.err
@@ -78,6 +89,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.screen {
 	case screenDashboard:
 		m.dashboard, cmd = m.dashboard.Update(msg)
+	case screenPeople:
+		m.people, cmd = m.people.Update(msg)
 	case screenQuery:
 		m.query, cmd = m.query.Update(msg)
 	}
@@ -85,12 +98,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	screenLabel := "Dashboard"
-	switch m.screen {
-	case screenQuery:
-		screenLabel = "Query"
-	}
-
 	var screenNames []string
 	screens := []struct {
 		key    string
@@ -98,6 +105,7 @@ func (m Model) View() string {
 		active bool
 	}{
 		{"F1", "Dashboard", m.screen == screenDashboard},
+		{"F2", "People", m.screen == screenPeople},
 		{"F7", "Query", m.screen == screenQuery},
 	}
 	for _, s := range screens {
@@ -110,7 +118,6 @@ func (m Model) View() string {
 		screenNames = append(screenNames, label)
 	}
 
-	_ = screenLabel
 	tabs := lipgloss.JoinHorizontal(lipgloss.Top, screenNames...)
 	statusRight := dimStatusStyle.Render("db:" + m.db.Backend())
 	gap := m.width - lipgloss.Width(tabs) - lipgloss.Width(statusRight) - 2
@@ -126,6 +133,8 @@ func (m Model) View() string {
 	switch m.screen {
 	case screenDashboard:
 		content = m.dashboard.View()
+	case screenPeople:
+		content = m.people.View()
 	case screenQuery:
 		content = m.query.View()
 	}
