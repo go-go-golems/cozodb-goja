@@ -9,6 +9,18 @@ topics:
       description: api topic for CozoDB goja API work
     - slug: cgo
       description: CGo-based native bindings and linker/runtime dependencies
+    - slug: go
+      description: Go programming language
+    - slug: tui
+      description: Terminal user interface
+    - slug: cozo
+      description: cozo extraction and app-level integration
+    - slug: glazed
+      description: glazed command/sections/middleware framework
+    - slug: geppetto
+      description: geppetto runtime and middleware integration
+    - slug: embeddings
+      description: embedding provider configuration and vector generation
 docTypes:
     - slug: index
       description: index document type
