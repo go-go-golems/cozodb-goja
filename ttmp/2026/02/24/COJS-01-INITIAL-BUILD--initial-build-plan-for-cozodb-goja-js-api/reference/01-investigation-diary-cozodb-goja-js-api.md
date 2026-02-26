@@ -54,7 +54,7 @@ ExternalSources:
     - local:02-cozo-lib-wasm-readme.md
     - local:cozodb-sysops.html
 Summary: Chronological execution log for COJS-01 covering ticket setup, source imports, codebase evidence gathering, script creation, design authoring, validation, and reMarkable upload.
-LastUpdated: 2026-02-24T17:42:00-05:00
+LastUpdated: 2026-02-25T18:58:00-05:00
 WhatFor: Preserve exact command trail, findings, minor failures, and design rationale used to produce the final research deliverable.
 WhenToUse: Use when reviewing or reproducing this ticket's research workflow.
 ---
@@ -856,3 +856,350 @@ I also confirmed ticket inventory and verified diary status in response to direc
 - After:
   - `go.work` now has `go 1.25.7`
   - `go test ./...` passes for `cozodb-goja`.
+
+## Step 19: Real DB Example Conversion (Backfill)
+
+This step started the requested hard shift from fake/invocation-only examples to real `cozo_cgo` database examples. The goal was to make each script query real persisted data and produce concrete payloads for onboarding.
+
+I converted the example suite in `cozo-extraction-tui` to open real sqlite-backed Cozo handles, and added a dedicated seeding script as script `00` so all later examples can assume schema + rows exist.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, can you add a script that populates a db and thus allows all the example scripts to do real queries and real stuff. Then run and build against real db. Update the existing scripts."
+
+**Assistant interpretation:** Add a real DB seed script, convert all examples to use real backend queries, and validate by actually running with `cozo_cgo`.
+
+**Inferred user intent:** Replace API-shape-only demos with practical, working scripts that a new developer can run and trust.
+
+**Commit (code):** `ada76a8` — "examples: run Cozo JS API scripts against real cozo_cgo db"
+
+### What I did
+
+- Added:
+  - `scripts/examples/cozodb-js/00-seed-real-db.js`
+  - `scripts/examples/cozodb-js/lib/cozo_real.js`
+- Rewrote `01..08` examples to open via real options (`backend`, `engine`, `path`) and return actual query/mutation outputs.
+- Updated `run-all-examples.sh`:
+  - passes `--plugin-engine-options-json`,
+  - runs `go run -tags cozo_cgo`,
+  - wires `CGO_LDFLAGS`,
+  - removes sqlite DB file before suite run for deterministic setup.
+- Added `make run-cgo-js-examples`.
+
+### Why
+
+- The previous examples were useful for API surface walkthrough, but they did not satisfy the requirement of real data reads/writes.
+
+### What worked
+
+- Real seed + query flow became reproducible from one command.
+- Final suite execution emits real relation rows for all examples.
+
+### What didn't work
+
+- Initial seed pass failed with:
+  - `Cannot find requested stored relation 'users'`
+- Root causes surfaced in following steps.
+
+### What I learned
+
+- Real backend behavior exposed integration quirks hidden by fake backend coverage.
+
+### What was tricky to build
+
+- Migrating examples was straightforward; keeping them deterministic and robust against backend quirks required targeted probe scripts and controlled startup ordering.
+
+### What warrants a second pair of eyes
+
+- Relation helper compilation/runtime path (`create/get`) on real backend vs fake backend parity.
+
+### What should be done in the future
+
+- Add dedicated integration tests for `rel.create`, `rel.get` parity on `cozo_cgo`.
+
+### Code review instructions
+
+- Start with:
+  - `scripts/examples/cozodb-js/00-seed-real-db.js`
+  - `scripts/examples/cozodb-js/run-all-examples.sh`
+  - `internal/plugins/loader.go`
+- Validate:
+  - `make run-cgo-js-examples`
+  - `go test ./... -count=1`
+
+### Technical details
+
+- Real backend defaults introduced:
+  - backend: `cozo_cgo`
+  - engine: `sqlite`
+  - db path: `/tmp/cozo-js-examples.db`
+
+## Step 20: Promise Decode and Output Normalization (Backfill)
+
+With real scripts in place, plugin outputs still depended on how Promise-returning values were decoded. This step hardened the decoder to convert fulfilled nested Promise/object values into plain JSON output.
+
+This was necessary so the CLI output remains human-reviewable and onboarding docs can show concrete data, not runtime artifacts.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 19)
+
+**Assistant interpretation:** Ensure returned outputs from real scripts are actually consumable in `cozo-plugin-run`.
+
+**Inferred user intent:** Make real examples practical, not theoretical.
+
+**Commit (code):** `ada76a8` — "examples: run Cozo JS API scripts against real cozo_cgo db"
+
+### What I did
+
+- Enhanced `internal/plugins/loader.go`:
+  - recursive JS value decoder,
+  - fulfilled promise resolution,
+  - rejected/pending promise errors surfaced explicitly,
+  - cycle detection,
+  - function-field skipping.
+- Added tests in `internal/plugins/loader_test.go` for:
+  - fulfilled nested promise decode,
+  - pending promise rejection path,
+  - rejected promise message propagation.
+
+### Why
+
+- Needed deterministic JSON output from real script returns.
+
+### What worked
+
+- Fulfilled promise values now appear as concrete JSON in CLI output.
+- Unit tests pass and catch regressions in decoder behavior.
+
+### What didn't work
+
+- N/A after decoder implementation; the remaining failures were relation/query semantics, not decoding.
+
+### What I learned
+
+- Decoder must treat JS object graphs as runtime-native structures, not trust raw `Export()` for nested promise-heavy payloads.
+
+### What was tricky to build
+
+- Correctly handling nested values while avoiding infinite recursion and preserving useful failure messages required explicit object graph tracking and skip semantics for functions.
+
+### What warrants a second pair of eyes
+
+- Whether to support additional JS host object types in decoder instead of skipping.
+
+### What should be done in the future
+
+- Add snapshot tests on full plugin output payloads for complex objects.
+
+### Code review instructions
+
+- Inspect:
+  - `internal/plugins/loader.go`
+  - `internal/plugins/loader_test.go`
+- Run:
+  - `go test ./internal/plugins -count=1`
+
+### Technical details
+
+- Common surfaced errors:
+  - `plugin run returned pending promise`
+  - `plugin run returned rejected promise: <message>`
+
+## Step 21: Probe-Driven Failure Isolation (Backfill)
+
+After the first real runs failed, I created minimal probe scripts to isolate whether failures came from open options, relation creation, import format, or query shape. This reduced guesswork and made failures reproducible.
+
+I kept probe scripts short and focused on one behavior each (create/import/put/create-via-exec variants).
+
+### Prompt Context
+
+**User prompt (verbatim):** "store all scripts you are writing to scripts/ within the ticket. Backfill . that way we can more easily see what you are doing and understand the issues."
+
+**Assistant interpretation:** Preserve all diagnostics scripts inside ticket `scripts/` and make debugging trail inspectable.
+
+**Inferred user intent:** Make investigation transparent and reviewable.
+
+### What I did
+
+- Created and backfilled probe scripts into ticket folder:
+  - `.../COJS-01.../scripts/02-create-relation-probe.js`
+  - `.../COJS-01.../scripts/03-import-probe.js`
+  - `.../COJS-01.../scripts/04-put-without-create-probe.js`
+  - `.../COJS-01.../scripts/05-create-via-exec-probe.js`
+  - `.../COJS-01.../scripts/06-create-no-replace-probe.js`
+  - `.../COJS-01.../scripts/02-run-probes.sh`
+- Added notes:
+  - `.../COJS-01.../reference/03-real-db-example-probe-notes.md`
+
+### Why
+
+- Needed a persistent, ticket-local debugging artifact trail.
+
+### What worked
+
+- Probe scripts reproduced exact failures quickly and consistently.
+- Backfill now makes the diagnosis process auditable.
+
+### What didn't work
+
+- Early probe outcomes:
+  - `rel.create(..., {Replace: true})` -> `Program has no entry`
+  - `db.import(...)` on non-existent relation -> `Cannot find requested stored relation`
+  - `rel.get(...)` in suite context -> unbound symbol error
+
+### What I learned
+
+- The real backend path currently has behavior gaps/quirks relative to expected high-level relation helper ergonomics.
+
+### What was tricky to build
+
+- Failures were not all caused by one bug; multiple independent sharp edges overlapped and looked similar at first (missing relation, invalid create mode, and get-query compile/runtime behavior).
+
+### What warrants a second pair of eyes
+
+- `cozodb-goja` relation helper layer for real backend parity, especially `create` option semantics and `get`.
+
+### What should be done in the future
+
+- Convert probes into permanent integration tests in `cozodb-goja` module.
+
+### Code review instructions
+
+- Run:
+  - `.../COJS-01.../scripts/02-run-probes.sh`
+- Compare outputs against:
+  - `.../COJS-01.../reference/03-real-db-example-probe-notes.md`
+
+### Technical details
+
+- Critical command used repeatedly:
+  - `CGO_LDFLAGS="-L.../.deps/cozo" go run -tags cozo_cgo ./cmd/cozo-plugin-run ...`
+
+## Step 22: Real Backend Compatibility Adjustments (Backfill)
+
+This step converted the discovered failure cases into deterministic operational rules for the examples, so the suite can succeed on real `sqlite` backend without manual cleanup.
+
+The fixes were intentionally minimal and explicit in scripts, avoiding hidden behavior.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 21)
+
+**Assistant interpretation:** Incorporate findings and make examples reliably runnable.
+
+**Inferred user intent:** Developers should be able to run examples without debugging runtime internals first.
+
+### What I did
+
+- Changed create and mutation option key casing for JS->Go decoding path where needed (`Keys/Values/Replace/Returning`).
+- Removed/avoided problematic `Replace: true` in seed path; used fresh DB + create without replace.
+- Removed `rel.get(...)` from happy-path scripts; replaced with explicit `exec` lookups.
+- Ensured suite resets sqlite DB before running so schema creation is deterministic.
+
+### Why
+
+- These adjustments reflect current backend behavior and keep examples stable.
+
+### What worked
+
+- `make run-cgo-js-examples` now runs all scripts to completion.
+- Outputs include concrete rows for seeded relations.
+
+### What didn't work
+
+- The first attempt that kept `Replace: true` remained broken (`Program has no entry`).
+
+### What I learned
+
+- Deterministic cleanup (`rm -f /tmp/cozo-js-examples.db`) is essential for repeatable relation-create paths.
+
+### What was tricky to build
+
+- Subtle option/key-shape mismatches (`keys` vs `Keys`, etc.) and relation helper semantics were easy to overlook because fake backend tests did not expose them.
+
+### What warrants a second pair of eyes
+
+- API docs/examples should explicitly note current backend caveats to avoid user confusion.
+
+### What should be done in the future
+
+- Tighten JS module input decoding to accept both lowercase and uppercase option keys consistently.
+
+### Code review instructions
+
+- Validate:
+  - `make run-cgo-js-examples`
+  - inspect `00-seed-real-db.js` and `03-rel-crud.js` for compatibility choices.
+
+### Technical details
+
+- Fresh DB reset is done in:
+  - `scripts/examples/cozodb-js/run-all-examples.sh`
+
+## Step 23: Documentation and Help Sync (Backfill)
+
+After code paths stabilized, docs were out-of-date because they still described unresolved-promise behavior and fake-backend-centric examples. This step aligned onboarding/reference/cookbook docs to the new real-db workflow.
+
+The output includes practical commands with `cozo_cgo` flags and engine options.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, did you keep a diary as you worked? if not, backfill a diary with frequent detailed entries. Explain to me what was tricky, afterwards"
+
+**Assistant interpretation:** Ensure process traceability (diary) and communicate technical difficulties clearly.
+
+**Inferred user intent:** Maintain auditable engineering process and make hidden complexity explicit for team onboarding.
+
+### What I did
+
+- Updated:
+  - `README.md`
+  - `pkg/doc/01-cozodb-js-onboarding-tutorial.md`
+  - `pkg/doc/02-cozodb-js-api-reference.md`
+  - `pkg/doc/03-cozodb-js-example-cookbook.md`
+- Verified help rendering:
+  - `go run ./cmd/cozo-plugin-run help cozo-js-onboarding-guide`
+  - `go run ./cmd/cozo-plugin-run help cozo-js-api-reference`
+  - `go run ./cmd/cozo-plugin-run help cozo-js-example-cookbook`
+
+### Why
+
+- Onboarding docs must match real runtime behavior and default commands.
+
+### What worked
+
+- Help pages render correctly with updated examples and troubleshooting guidance.
+
+### What didn't work
+
+- N/A after updates; no parsing/render failures observed.
+
+### What I learned
+
+- Documentation drift happens quickly during behavioral pivots; sync should happen in the same iteration as code fixes.
+
+### What was tricky to build
+
+- Keeping docs accurate while behavior was still being debugged required waiting for final probe conclusions before locking examples.
+
+### What warrants a second pair of eyes
+
+- Review API reference sections for any remaining fake-backend assumptions.
+
+### What should be done in the future
+
+- Add doc lint/check that scans for stale snippets (`backend: "fake"` in primary examples).
+
+### Code review instructions
+
+- Review docs:
+  - `pkg/doc/*.md`
+  - `README.md`
+- Render locally with `cozo-plugin-run help <slug>`.
+
+### Technical details
+
+- Final suite + docs validation commands:
+  - `go test ./... -count=1`
+  - `make run-cgo-js-examples`
