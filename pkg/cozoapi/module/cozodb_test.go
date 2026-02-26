@@ -288,6 +288,38 @@ func TestModuleRelMutationTuplePayloadWithHeaders(t *testing.T) {
 	}
 }
 
+func TestModuleRelErrorPayloadIncludesCodeAndOperation(t *testing.T) {
+	backend := fakebackend.New()
+	db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	mod := New(func(_ context.Context, _ OpenOptions) (*cozoapi.DB, error) {
+		return db, nil
+	})
+	vm, req := newRuntimeWithModule(t, mod)
+	cozodb := requireModule(t, vm, req)
+	dbValue := call(t, cozodb.Get("open"), cozodb)
+	rel := call(t, dbValue.ToObject(vm).Get("rel"), dbValue, vm.ToValue("users"))
+
+	payload := callRejectedPayload(
+		t,
+		rel.ToObject(vm).Get("put"),
+		rel,
+		vm.ToValue([][]any{{"u1", "Ada"}}),
+	)
+	if payload["code"] != "COZO_REL_ERROR" {
+		t.Fatalf("expected code=COZO_REL_ERROR, got %#v", payload["code"])
+	}
+	if payload["operation"] != "rel.put" {
+		t.Fatalf("expected operation=rel.put, got %#v", payload["operation"])
+	}
+	msg, _ := payload["message"].(string)
+	if !strings.Contains(msg, "headers") {
+		t.Fatalf("expected guidance message mentioning headers, got %q", msg)
+	}
+}
+
 func newRuntimeWithModule(t *testing.T, mod *Module) (*goja.Runtime, *require.RequireModule) {
 	t.Helper()
 	reg := require.NewRegistry()
@@ -333,6 +365,15 @@ func call(t *testing.T, fnValue goja.Value, this goja.Value, args ...goja.Value)
 
 func callRejected(t *testing.T, fnValue goja.Value, this goja.Value, args ...goja.Value) string {
 	t.Helper()
+	payload := callRejectedPayload(t, fnValue, this, args...)
+	if msg, ok := payload["message"].(string); ok {
+		return msg
+	}
+	return ""
+}
+
+func callRejectedPayload(t *testing.T, fnValue goja.Value, this goja.Value, args ...goja.Value) map[string]any {
+	t.Helper()
 	fn, ok := goja.AssertFunction(fnValue)
 	if !ok {
 		t.Fatalf("value is not callable: %s", fnValue.String())
@@ -350,9 +391,8 @@ func callRejected(t *testing.T, fnValue goja.Value, this goja.Value, args ...goj
 	}
 	result := p.Result().Export()
 	if asMap, ok := result.(map[string]any); ok {
-		if msg, ok := asMap["message"].(string); ok {
-			return msg
-		}
+		return asMap
 	}
-	return ""
+	t.Fatalf("expected rejected payload object, got %T", result)
+	return map[string]any{}
 }

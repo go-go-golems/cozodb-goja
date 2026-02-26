@@ -244,7 +244,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	_ = obj.Set("name", rel.Name())
 
 	_ = obj.Set("create", func(call goja.FunctionCall) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.create", func() (goja.Value, error) {
 			if len(call.Arguments) < 1 {
 				return nil, fmt.Errorf("rel.create requires a spec object")
 			}
@@ -263,9 +263,12 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 		})
 	})
 
-	buildMutation := func(run func(ctx context.Context, rows []map[string]cozoapi.CozoValue, opts cozoapi.RelationMutationOptions) (cozoapi.CozoResult, error)) func(goja.FunctionCall) goja.Value {
+	buildMutation := func(
+		operation string,
+		run func(ctx context.Context, rows []map[string]cozoapi.CozoValue, opts cozoapi.RelationMutationOptions) (cozoapi.CozoResult, error),
+	) func(goja.FunctionCall) goja.Value {
 		return func(call goja.FunctionCall) goja.Value {
-			return promise(vm, func() (goja.Value, error) {
+			return relationPromise(vm, operation, func() (goja.Value, error) {
 				rows, opts, err := decodeMutationInput(vm, call.Arguments)
 				if err != nil {
 					return nil, err
@@ -279,14 +282,14 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 		}
 	}
 
-	_ = obj.Set("put", buildMutation(rel.Put))
-	_ = obj.Set("insert", buildMutation(rel.Insert))
-	_ = obj.Set("update", buildMutation(rel.Update))
-	_ = obj.Set("rm", buildMutation(rel.Rm))
-	_ = obj.Set("del", buildMutation(rel.Del))
+	_ = obj.Set("put", buildMutation("rel.put", rel.Put))
+	_ = obj.Set("insert", buildMutation("rel.insert", rel.Insert))
+	_ = obj.Set("update", buildMutation("rel.update", rel.Update))
+	_ = obj.Set("rm", buildMutation("rel.rm", rel.Rm))
+	_ = obj.Set("del", buildMutation("rel.del", rel.Del))
 
 	_ = obj.Set("get", func(call goja.FunctionCall) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.get", func() (goja.Value, error) {
 			if len(call.Arguments) == 0 {
 				return nil, fmt.Errorf("rel.get requires key object")
 			}
@@ -306,7 +309,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("columns", func() goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.columns", func() (goja.Value, error) {
 			result, err := rel.Columns(context.Background())
 			if err != nil {
 				return nil, err
@@ -316,7 +319,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("indices", func() goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.indices", func() (goja.Value, error) {
 			result, err := rel.Indices(context.Background())
 			if err != nil {
 				return nil, err
@@ -326,7 +329,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("access", func(level string) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.access", func() (goja.Value, error) {
 			if err := rel.Access(context.Background(), cozoapi.AccessLevel(level)); err != nil {
 				return nil, err
 			}
@@ -338,11 +341,18 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 }
 
 func promise(vm *goja.Runtime, fn func() (goja.Value, error)) goja.Value {
+	return promiseWithError(vm, "COZO_JS_ERROR", "", fn)
+}
+
+func relationPromise(vm *goja.Runtime, operation string, fn func() (goja.Value, error)) goja.Value {
+	return promiseWithError(vm, "COZO_REL_ERROR", operation, fn)
+}
+
+func promiseWithError(vm *goja.Runtime, code, operation string, fn func() (goja.Value, error)) goja.Value {
 	p, resolve, reject := vm.NewPromise()
 	result, err := fn()
 	if err != nil {
-		errObj := vm.NewObject()
-		_ = errObj.Set("message", err.Error())
+		errObj := errorObject(vm, code, operation, err)
 		_ = reject(errObj)
 		return vm.ToValue(p)
 	}
@@ -351,6 +361,18 @@ func promise(vm *goja.Runtime, fn func() (goja.Value, error)) goja.Value {
 	}
 	_ = resolve(result)
 	return vm.ToValue(p)
+}
+
+func errorObject(vm *goja.Runtime, code, operation string, err error) *goja.Object {
+	errObj := vm.NewObject()
+	_ = errObj.Set("message", err.Error())
+	if strings.TrimSpace(code) != "" {
+		_ = errObj.Set("code", code)
+	}
+	if strings.TrimSpace(operation) != "" {
+		_ = errObj.Set("operation", operation)
+	}
+	return errObj
 }
 
 func resultToValue(vm *goja.Runtime, result cozoapi.CozoResult) goja.Value {
