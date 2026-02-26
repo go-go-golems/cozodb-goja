@@ -1,0 +1,59 @@
+# CO-05 vector search templates for F9.
+
+# Params:
+# - $q: query embedding vector (<F32; 384>)
+# - $k: nearest neighbors per relation
+# - $ef: runtime search expansion
+# - $limit: max merged rows (for all mode)
+
+# person-only
+?[dist, id, name, description] :=
+  ~person:person_embedding_idx{
+    id, name, description |
+    query: vec($q),
+    k: $k,
+    ef: $ef,
+    bind_distance: dist
+  }
+:order dist
+
+# relationship-only
+?[dist, id, relationship_type, description] :=
+  ~relationship:relationship_embedding_idx{
+    id, relationship_type, description |
+    query: vec($q),
+    k: $k,
+    ef: $ef,
+    bind_distance: dist
+  }
+:order dist
+
+# all-relations merged
+?[entity_type, id, label, snippet, dist] :=
+  *{
+    ?[entity_type, id, label, snippet, dist] :=
+      ~person:person_embedding_idx{id, name, description | query: vec($q), k: $k, ef: $ef, bind_distance: dist},
+      entity_type = "person",
+      label = name,
+      snippet = description;
+
+    ?[entity_type, id, label, snippet, dist] :=
+      ~relationship:relationship_embedding_idx{id, relationship_type, description | query: vec($q), k: $k, ef: $ef, bind_distance: dist},
+      entity_type = "relationship",
+      label = relationship_type,
+      snippet = description;
+
+    ?[entity_type, id, label, snippet, dist] :=
+      ~behavior:behavior_embedding_idx{id, behavior_type, description | query: vec($q), k: $k, ef: $ef, bind_distance: dist},
+      entity_type = "behavior",
+      label = behavior_type,
+      snippet = description;
+
+    ?[entity_type, id, label, snippet, dist] :=
+      ~event:event_embedding_idx{id, description | query: vec($q), k: $k, ef: $ef, bind_distance: dist},
+      entity_type = "event",
+      label = "event",
+      snippet = description
+  }
+:order dist
+:limit $limit

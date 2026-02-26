@@ -1,6 +1,9 @@
-.PHONY: gifs
+.PHONY: gifs guard-no-legacy-tui-paths
 
 all: gifs
+
+guard-no-legacy-tui-paths:
+	./ttmp/2026/02/25/CO-10--phase-6-hard-cutover-remove-legacy-tui-and-harden-library-boundary/scripts/01-guard-no-legacy-tui-paths.sh
 
 VERSION=v0.1.14
 GORELEASER_ARGS ?= --skip=sign --snapshot --clean

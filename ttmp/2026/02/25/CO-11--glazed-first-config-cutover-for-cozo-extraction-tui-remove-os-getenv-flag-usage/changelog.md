@@ -1,0 +1,58 @@
+# Changelog
+
+## 2026-02-25
+
+- Created CO-11 ticket workspace for Glazed-first config cutover.
+- Added CO-11 design document: `design-doc/01-glazed-first-configuration-architecture-and-implementation-plan.md`.
+- Added CO-11 research diary: `reference/01-investigation-diary-glazed-cutover.md`.
+- Completed deep code evidence pass across:
+  - `cozo-extraction-tui` command and runtime env usage,
+  - Geppetto section/middleware bootstrap chain,
+  - Geppetto profile registry adapter and precedence tests,
+  - Geppetto embeddings parsed-values factory path.
+- Captured phased implementation plan and granular task backlog for hard cutover.
+- Related core evidence files to CO-11 design and diary docs with `docmgr doc relate`.
+- Added ticket vocabulary slugs for `cozo`, `embeddings`, `geppetto`, and `glazed`.
+- Validation: `docmgr doctor --ticket CO-11 --stale-after 30` passes cleanly.
+- reMarkable delivery:
+  - Dry run passed for bundle upload to `/ai/2026/02/25/CO-11`.
+  - Uploaded `CO-11 Glazed Config Cutover Research.pdf`.
+  - Verified remote listing via `remarquee cloud ls /ai/2026/02/25/CO-11 --long --non-interactive`.
+- Locked implementation policy from user direction: simplest path, hard cutover, no backwards compatibility, precedence fixed to `flags > env > profiles > config > defaults` for this iteration.
+- Implementation commit `96cc0b9` in `2026-02-18--cozodb-extraction`:
+  - Added Glazed command package for `cozo-tui` and `cozo-plugin-run` entrypoints.
+  - Added app config sections and custom middleware bootstrap chain.
+  - Removed non-test runtime `os.Getenv` usage in F9 paths.
+  - Switched seed/F9 embedding flow to explicit parsed-values provider injection.
+  - Removed env-based lazy embedding provider fallback from `geppettohost`.
+  - Replaced stale env-bridge tests and removed obsolete `cmd/cozo-tui/main_test.go`.
+  - Validation passed: `go test ./... -count=1` in `cozo-extraction-tui`.
+- Implementation commit `7fe59cf` in `2026-02-18--cozodb-extraction`:
+  - Added middleware precedence tests (`defaults < config < profiles < env < flags`) and profile bootstrap tests in `internal/config/middlewares_test.go`.
+  - Added parsed-values provider construction tests in `internal/config/embeddings_test.go`.
+  - Added command decode tests for typed settings in `internal/commands/decode_test.go`.
+  - Added aggregate execution settings decode helpers in `internal/config/settings.go`.
+  - Fixed command builder option-order bug so `--profile-file` is registered (profile settings no longer dropped by parser config override).
+  - Updated Makefile targets to Glazed-prefixed runtime flags and added real-seed helper target.
+  - Added `cozo-extraction-tui/README.md` with hard-cutover CLI examples and precedence note.
+- Additional validation after commit `7fe59cf`:
+  - `go test ./... -count=1` passes.
+  - `make test-cgo-vsearch` passes with `.deps` `libcozo_c.a`.
+  - Real credentials seed-only run succeeds via parsed-values path:
+    - `make run-cgo-seed-only-real SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'`
+  - Manual interactive TUI smoke in real PTY completed and exited cleanly with `q`.
+- Implementation commit `d6ab6cb` in `2026-02-18--cozodb-extraction`:
+  - Reworked `cozo-extraction-tui/README.md` into an onboarding guide with prerequisites, fast-start flow, plugin-run fixture example, configuration model, and troubleshooting.
+  - Updated `Makefile` `run-cgo-tui` to default to sqlite DB path + profile/config overlays (instead of `mem` mode that forced immediate provider-backed seeding).
+  - Validation:
+    - `go test ./... -count=1` passes.
+    - `make help` reflects new target behavior.
+    - `make run-cgo-tui SEED_DB=/tmp/cozo-extraction-tui-seed-real3.db SEED_EMBED_FLAGS='--embeddings-dimensions 384'` starts and exits cleanly in PTY.
+- Cleanup commit `0518bd4` in `cozodb-goja`:
+  - Deleted legacy duplicate runtime:
+    - `cmd/cozo-tui/main.go`
+    - `cmd/cozo-seed/main.go`
+    - `internal/tui/*`
+  - Ran `go mod tidy` to drop now-unused direct TUI deps.
+  - Validation:
+    - `go test ./... -count=1` passes in `cozodb-goja`.
