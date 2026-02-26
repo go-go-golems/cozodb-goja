@@ -153,6 +153,141 @@ func TestModuleOpenOptionsDecode(t *testing.T) {
 	}
 }
 
+func TestModuleRelCreateSupportsLowercaseAndUppercaseSpecFields(t *testing.T) {
+	t.Run("lowercase fields", func(t *testing.T) {
+		backend := fakebackend.New()
+		db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+		if err != nil {
+			t.Fatalf("open db: %v", err)
+		}
+		mod := New(func(_ context.Context, _ OpenOptions) (*cozoapi.DB, error) {
+			return db, nil
+		})
+		vm, req := newRuntimeWithModule(t, mod)
+		cozodb := requireModule(t, vm, req)
+		dbValue := call(t, cozodb.Get("open"), cozodb)
+		rel := call(t, dbValue.ToObject(vm).Get("rel"), dbValue, vm.ToValue("users"))
+
+		call(
+			t,
+			rel.ToObject(vm).Get("create"),
+			rel,
+			vm.ToValue(map[string]any{
+				"keys":   map[string]any{"id": "String"},
+				"values": map[string]any{"name": "String"},
+			}),
+			vm.ToValue(map[string]any{"replace": true}),
+		)
+
+		calls := backend.Calls()
+		if len(calls) != 1 {
+			t.Fatalf("backend calls = %d, want 1", len(calls))
+		}
+		if !strings.Contains(calls[0].Script, ":replace users") {
+			t.Fatalf("expected :replace users, got %q", calls[0].Script)
+		}
+	})
+
+	t.Run("uppercase aliases", func(t *testing.T) {
+		backend := fakebackend.New()
+		db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+		if err != nil {
+			t.Fatalf("open db: %v", err)
+		}
+		mod := New(func(_ context.Context, _ OpenOptions) (*cozoapi.DB, error) {
+			return db, nil
+		})
+		vm, req := newRuntimeWithModule(t, mod)
+		cozodb := requireModule(t, vm, req)
+		dbValue := call(t, cozodb.Get("open"), cozodb)
+		rel := call(t, dbValue.ToObject(vm).Get("rel"), dbValue, vm.ToValue("users"))
+
+		call(
+			t,
+			rel.ToObject(vm).Get("create"),
+			rel,
+			vm.ToValue(map[string]any{
+				"Keys":   map[string]any{"id": "String"},
+				"Values": map[string]any{"name": "String"},
+			}),
+			vm.ToValue(map[string]any{"Replace": true}),
+		)
+
+		calls := backend.Calls()
+		if len(calls) != 1 {
+			t.Fatalf("backend calls = %d, want 1", len(calls))
+		}
+		if !strings.Contains(calls[0].Script, ":replace users") {
+			t.Fatalf("expected :replace users, got %q", calls[0].Script)
+		}
+	})
+}
+
+func TestModuleRelMutationTupleRowsRequireExplicitHeaders(t *testing.T) {
+	backend := fakebackend.New()
+	db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	mod := New(func(_ context.Context, _ OpenOptions) (*cozoapi.DB, error) {
+		return db, nil
+	})
+	vm, req := newRuntimeWithModule(t, mod)
+	cozodb := requireModule(t, vm, req)
+	dbValue := call(t, cozodb.Get("open"), cozodb)
+	rel := call(t, dbValue.ToObject(vm).Get("rel"), dbValue, vm.ToValue("users"))
+
+	rejected := callRejected(
+		t,
+		rel.ToObject(vm).Get("put"),
+		rel,
+		vm.ToValue([][]any{{"u1", "Ada"}}),
+	)
+	if !strings.Contains(rejected, "headers") {
+		t.Fatalf("expected headers guidance error, got: %q", rejected)
+	}
+}
+
+func TestModuleRelMutationTuplePayloadWithHeaders(t *testing.T) {
+	backend := fakebackend.New()
+	db, err := cozoapi.Open(backend, cozoapi.DefaultPolicy())
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	mod := New(func(_ context.Context, _ OpenOptions) (*cozoapi.DB, error) {
+		return db, nil
+	})
+	vm, req := newRuntimeWithModule(t, mod)
+	cozodb := requireModule(t, vm, req)
+	dbValue := call(t, cozodb.Get("open"), cozodb)
+	rel := call(t, dbValue.ToObject(vm).Get("rel"), dbValue, vm.ToValue("users"))
+
+	call(
+		t,
+		rel.ToObject(vm).Get("put"),
+		rel,
+		vm.ToValue(map[string]any{
+			"headers": []string{"id", "name"},
+			"rows": [][]any{
+				{"u1", "Ada"},
+				{"u2", "Bob"},
+			},
+		}),
+		vm.ToValue(map[string]any{"Returning": true}),
+	)
+
+	calls := backend.Calls()
+	if len(calls) != 1 {
+		t.Fatalf("backend calls = %d, want 1", len(calls))
+	}
+	if !strings.Contains(calls[0].Script, ":put users {id, name}") {
+		t.Fatalf("unexpected put script: %q", calls[0].Script)
+	}
+	if !strings.Contains(calls[0].Script, ":returning") {
+		t.Fatalf("expected :returning in script: %q", calls[0].Script)
+	}
+}
+
 func newRuntimeWithModule(t *testing.T, mod *Module) (*goja.Runtime, *require.RequireModule) {
 	t.Helper()
 	reg := require.NewRegistry()
