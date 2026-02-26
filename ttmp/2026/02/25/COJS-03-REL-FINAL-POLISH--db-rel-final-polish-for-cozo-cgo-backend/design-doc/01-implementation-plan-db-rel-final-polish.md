@@ -7,7 +7,7 @@ Topics:
     - cozodb
     - goja
     - javascript
-    - cozo_cgo
+    - cgo
 DocType: design-doc
 Intent: long-term
 Owners: []

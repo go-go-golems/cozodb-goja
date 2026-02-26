@@ -7,7 +7,7 @@ Topics:
     - cozodb
     - goja
     - javascript
-    - cozo_cgo
+    - cgo
 DocType: index
 Intent: long-term
 Owners: []
@@ -40,7 +40,7 @@ Current status: **active**
 - cozodb
 - goja
 - javascript
-- cozo_cgo
+- cgo
 
 ## Tasks
 
