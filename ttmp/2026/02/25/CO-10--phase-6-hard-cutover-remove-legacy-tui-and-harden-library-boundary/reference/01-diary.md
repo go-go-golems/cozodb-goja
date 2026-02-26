@@ -149,3 +149,82 @@ I validated both repos with tests, ran boundary scans with `rg`, added a guard s
 
 ### Technical details
 - `docmgr doctor` initially warned about stale related file `cozodb-goja/cmd/cozo-tui/main.go`; resolved by removing obsolete related-file entries and adding relocated command path.
+
+## Step 3: Hard-Cut `geppetto/plugins` Contract to Local `cozo/plugins` Ownership
+
+This step completed a no-backward-compatibility cutover for the extractor plugin descriptor helper module. We removed active-path dependency on `require("geppetto/plugins")` and moved plugin-contract runtime ownership into the relocated extraction runtime.
+
+### Prompt Context
+
+**User prompt (verbatim):** "remove the defineExtractor stuff entirely from cozodb-goja. Move everything in geppetto/ hard cut over to the cozo-extraction-tui. Add tasks to the ticket."
+
+**Assistant interpretation:** Perform immediate hard cutover: localize plugin helper runtime ownership in extraction module, migrate scripts/tests, and scrub `defineExtractor` usage from `cozodb-goja` ticket artifacts.
+
+**Inferred user intent:** Keep Cozo-specific JS plugin contract mechanics out of shared Geppetto module ownership and keep ticket traceability tight.
+
+### What I did
+- In `cozo-extraction-tui`:
+  - copied JS `geppetto` module runtime integration into local package:
+    - `internal/jsmodules/geppetto/*`
+  - removed plugin submodule registration from local copied register path (`module.go`).
+  - added new local native module:
+    - `internal/jsmodules/cozoplugins/module.go`
+    - module name: `cozo/plugins`
+    - exports: `EXTRACTOR_PLUGIN_API_VERSION`, `defineExtractorPlugin`, `wrapExtractorRun`.
+  - rewired runtime module registration:
+    - `internal/geppettohost/runtime.go` now imports local `internal/jsmodules/geppetto` and registers `cozo/plugins`.
+  - migrated active code/docs from `geppetto/plugins` to `cozo/plugins`:
+    - `scripts/*`
+    - `internal/*_test.go`
+    - `pkg/doc/*`.
+  - removed copied stale `generate.go` from local jsmodule copy to avoid invalid `go generate` paths.
+  - ran `gofmt` on edited Go files.
+- In `cozodb-goja`:
+  - converted ticket probe scripts to explicit descriptor exports (no helper import):
+    - `ttmp/.../COJS-01.../scripts/02-07*.js`
+  - converted CO-05 template script similarly:
+    - `ttmp/.../CO-05.../scripts/01-extractor-plugin-template.js`.
+
+### Why
+- Cozo extractor plugin contract helpers are Cozo workflow-specific and should be owned by the Cozo runtime app boundary.
+
+### What worked
+- `GOWORK=off go test ./... -count=1` passed in `cozo-extraction-tui`.
+- `cozo-plugin-run` fixture smoke passed with `cozo/plugins`:
+  - `printf 'Alice met Bob at launch.' | go run ./cmd/cozo-plugin-run --plugin-script ./scripts/fixtures/extractor_fixture.js --plugin-transcript - --plugin-pretty=false`
+  - returned valid extraction JSON and metadata.
+- `cozodb-goja` now has no non-markdown occurrences of:
+  - `defineExtractorPlugin`
+  - `wrapExtractorRun`
+  - `geppetto/plugins`.
+
+### What didn't work
+- Initial targeted test pass failed due missing `go.sum` entry for `go-emrichen` transitively used by `geppetto/pkg/embeddings`:
+  - fixed with `GOWORK=off go mod tidy` in `cozo-extraction-tui`.
+
+### What I learned
+- Copying the JS module package locally is straightforward, but generated-file scaffolding (`generate.go`) must be pruned/updated to keep repo-local generation sane.
+
+### What was tricky to build
+- Preserving existing extraction script ergonomics while hard-cutting module ownership required adding `cozo/plugins` with parity exports before migration.
+
+### What warrants a second pair of eyes
+- Decide if any remaining Geppetto module references in historical ticket docs should be normalized or intentionally preserved as historical record.
+
+### What should be done in the future
+- Consider a follow-up that migrates plugin scripts from helper wrapper style to plain descriptor exports everywhere for simpler host contract semantics.
+
+### Code review instructions
+- Review runtime/module ownership:
+  - `2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/geppettohost/runtime.go`
+  - `2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/jsmodules/cozoplugins/module.go`
+  - `2026-02-18--cozodb-extraction/cozo-extraction-tui/internal/jsmodules/geppetto/module.go`
+- Review script migration:
+  - `2026-02-18--cozodb-extraction/cozo-extraction-tui/scripts/**/*.js`
+  - `cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/scripts/*.js`
+- Re-run:
+  - `GOWORK=off go test ./... -count=1` in `cozo-extraction-tui`
+  - `printf 'Alice met Bob at launch.' | GOWORK=off go run ./cmd/cozo-plugin-run --plugin-script ./scripts/fixtures/extractor_fixture.js --plugin-transcript - --plugin-pretty=false`.
+
+### Technical details
+- `cozo/plugins` helper semantics were intentionally kept source-compatible with prior helper behavior to keep script-level migration limited to module-path changes in extraction repo.

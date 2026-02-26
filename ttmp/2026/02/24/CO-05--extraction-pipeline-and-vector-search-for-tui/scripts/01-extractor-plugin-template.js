@@ -1,7 +1,6 @@
 "use strict";
 
 const gp = require("geppetto");
-const { defineExtractorPlugin, wrapExtractorRun } = require("geppetto/plugins");
 
 function extractPayloadFromTurn(turn) {
   const blocks = Array.isArray(turn && turn.blocks) ? turn.blocks : [];
@@ -24,12 +23,14 @@ function extractPayloadFromTurn(turn) {
   };
 }
 
-module.exports = defineExtractorPlugin({
+module.exports = {
+  apiVersion: "cozo.extractor/v1",
+  kind: "extractor",
   id: "cozo.relationship-extractor.template",
   name: "Cozo Relationship Extractor Template",
   create() {
     return {
-      run: wrapExtractorRun((input) => {
+      run(input) {
         const engine = input.engineOptions
           ? gp.engines.fromConfig(input.engineOptions)
           : gp.engines.fromProfile(input.profile || "", { timeoutMs: input.timeoutMs });
@@ -57,7 +58,7 @@ module.exports = defineExtractorPlugin({
         });
 
         return extractPayloadFromTurn(out);
-      }),
+      },
     };
   },
-});
+};

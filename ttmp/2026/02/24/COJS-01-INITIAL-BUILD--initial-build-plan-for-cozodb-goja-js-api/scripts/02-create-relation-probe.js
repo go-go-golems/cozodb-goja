@@ -1,12 +1,13 @@
-const { defineExtractorPlugin, wrapExtractorRun } = require("geppetto/plugins");
 const cozo = require("cozodb");
 
-module.exports = defineExtractorPlugin({
+module.exports = {
+  apiVersion: "cozo.extractor/v1",
+  kind: "extractor",
   id: "cozo.probe.create-relation",
   name: "Probe - create relation",
   create() {
     return {
-      run: wrapExtractorRun((input) => {
+      run(input) {
         const o = input.engineOptions || {};
         const db = cozo.open({
           backend: o.backend || "cozo_cgo",
@@ -28,7 +29,7 @@ module.exports = defineExtractorPlugin({
         const pClose = db.close();
 
         return { create: pCreate, put: pPut, export: pExport, close: pClose };
-      }),
+      },
     };
   },
-});
+};

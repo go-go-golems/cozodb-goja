@@ -3,8 +3,8 @@ const cozo = require("cozodb");
 module.exports = {
   apiVersion: "cozo.extractor/v1",
   kind: "extractor",
-  id: "probe.put-no-create",
-  name: "probe put no create",
+  id: "cozo.probe.get",
+  name: "Probe - relation get",
   create() {
     return {
       run(input) {
@@ -12,13 +12,14 @@ module.exports = {
         const db = cozo.open({
           backend: o.backend || "cozo_cgo",
           engine: o.engine || "sqlite",
-          path: o.path || "/tmp/cozo-probe.db",
+          path: o.path || "/tmp/cozo-js-examples.db",
           options: o.options || {},
         });
-        const pPut = db.rel("users").put([{ id: "u1", name: "Ada" }], { Returning: true });
-        const pExport = db.export(["users"]);
-        const pClose = db.close();
-        return { put: pPut, export: pExport, close: pClose };
+
+        const row = db.rel("users").get({ id: "u1" });
+        const close = db.close();
+
+        return { row, close };
       },
     };
   },
