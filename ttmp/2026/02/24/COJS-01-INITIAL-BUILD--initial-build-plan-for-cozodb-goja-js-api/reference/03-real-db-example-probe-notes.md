@@ -16,7 +16,18 @@ Validate real `cozo_cgo` behavior for JS API examples and capture reproducible p
 2. `rel(name).create(...)` (without `Replace`) succeeds on fresh DB.
 3. `rel(name).put(...)` against a missing relation rejects with `Cannot find requested stored relation`.
 4. `db.import(...)` requires relation pre-existence.
-5. `rel(name).get(...)` currently rejects on real backend (`Symbol 'row' in rule head is unbound`) in this integration path.
+5. `rel(name).get(...)` was rejecting on real backend (`Symbol 'row' in rule head is unbound`) due an invalid compiler query shape.
+
+## Follow-up (2026-02-25)
+`rel(name).get(...)` has now been fixed in `pkg/cozoapi/relation.go`:
+
+1. Compile path now generates valid predicates (`id == $k_id`) rather than unbound head symbols.
+2. Real backend path attempts a full-row projection by discovering relation columns first.
+3. Fallback path still works when column discovery is unavailable.
+
+Verification probe script:
+
+- `scripts/07-get-probe.js`
 
 ## Practical adjustments applied in examples
 1. Seed flow uses `create` without `Replace` on a fresh sqlite DB file.
