@@ -1,7 +1,7 @@
 ---
 Title: Real Cozo backend wiring and tagged integration
 Ticket: COJS-02-REAL-BACKEND-WIRING
-Status: active
+Status: complete
 Topics:
     - cozodb
     - goja
@@ -14,10 +14,11 @@ Owners: []
 RelatedFiles: []
 ExternalSources: []
 Summary: ""
-LastUpdated: 2026-02-24T19:35:30.949149171-05:00
+LastUpdated: 2026-02-25T22:10:45.226594314-05:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 # Real Cozo backend wiring and tagged integration
 

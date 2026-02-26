@@ -1,7 +1,7 @@
 ---
-Title: Phase 1-3 Hard Cutover: Bootstrap, Relocate TUI, Reuse Plugin Runtime
+Title: 'Phase 1-3 Hard Cutover: Bootstrap, Relocate TUI, Reuse Plugin Runtime'
 Ticket: CO-07
-Status: active
+Status: complete
 Topics:
     - cozodb
     - go
@@ -18,11 +18,12 @@ RelatedFiles:
     - Path: 2026-02-18--cozodb-extraction/cozo-relationship-js-runner/plugin_loader.go
       Note: Source plugin loader logic for adaptation
 ExternalSources: []
-Summary: "Execution ticket for phases 1-3 foundation with hard cutover posture"
-LastUpdated: 2026-02-25T11:58:00-05:00
-WhatFor: "Track implementation of module bootstrap, TUI relocation, and plugin runtime foundation"
-WhenToUse: "Use during CO-07 implementation and review"
+Summary: Execution ticket for phases 1-3 foundation with hard cutover posture
+LastUpdated: 2026-02-25T22:10:45.772779044-05:00
+WhatFor: Track implementation of module bootstrap, TUI relocation, and plugin runtime foundation
+WhenToUse: Use during CO-07 implementation and review
 ---
+
 
 # CO-07 -- Phases 1-3 Hard Cutover Foundation
 

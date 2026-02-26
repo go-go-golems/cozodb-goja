@@ -1,7 +1,7 @@
 ---
 Title: 'Phase 4: F8 Extraction Monitor in Relocated TUI'
 Ticket: CO-08
-Status: active
+Status: complete
 Topics:
     - cozodb
     - go
@@ -12,11 +12,12 @@ Intent: long-term
 Owners: []
 RelatedFiles: []
 ExternalSources: []
-Summary: "Phase 4 ticket for implementing F8 extraction monitor screen and import workflow"
-LastUpdated: 2026-02-25T12:08:00-05:00
-WhatFor: "Track implementation of extraction monitor behavior in relocated TUI"
-WhenToUse: "Use during CO-08 development"
+Summary: Phase 4 ticket for implementing F8 extraction monitor screen and import workflow
+LastUpdated: 2026-02-25T22:10:45.99516424-05:00
+WhatFor: Track implementation of extraction monitor behavior in relocated TUI
+WhenToUse: Use during CO-08 development
 ---
+
 
 # CO-08 -- Phase 4 F8 Extraction Monitor
 

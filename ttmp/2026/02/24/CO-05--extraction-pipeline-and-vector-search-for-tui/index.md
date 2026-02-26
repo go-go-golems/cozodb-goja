@@ -1,7 +1,7 @@
 ---
 Title: Extraction Pipeline and Vector Search for TUI
 Ticket: CO-05
-Status: active
+Status: complete
 Topics:
     - cozodb
     - goja
@@ -27,11 +27,12 @@ ExternalSources:
     - https://docs.cozodb.org/en/latest/vector.html
     - https://github.com/charmbracelet/bubbletea
     - https://github.com/go-go-golems/go-go-goja
-Summary: "Add JS extraction plugin runner and HNSW vector search to the CozoDB TUI (screens F8 and F9), including a detailed geppetto-based implementation spec"
-LastUpdated: 2026-02-25T10:50:00-05:00
-WhatFor: "Complete the TUI with extraction pipeline integration and semantic vector search"
-WhenToUse: "When implementing F8 (Extraction Monitor) or F9 (Vector Search) screens, or adding embedding support"
+Summary: Add JS extraction plugin runner and HNSW vector search to the CozoDB TUI (screens F8 and F9), including a detailed geppetto-based implementation spec
+LastUpdated: 2026-02-25T22:10:45.537609837-05:00
+WhatFor: Complete the TUI with extraction pipeline integration and semantic vector search
+WhenToUse: When implementing F8 (Extraction Monitor) or F9 (Vector Search) screens, or adding embedding support
 ---
+
 
 # Extraction Pipeline and Vector Search for TUI
 

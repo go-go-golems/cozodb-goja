@@ -96,3 +96,8 @@ Renamed scaffold placeholder CLI path and release metadata from `XXX` to `cozo` 
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/Makefile — Install and release module checks updated to `cozo`/`cozodb-goja`
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/README.md — CLI usage examples now reference `./cmd/cozo`
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/reference/01-investigation-diary-cozodb-goja-js-api.md — Diary entry added for rename/validation
+
+## 2026-02-25
+
+Ticket closed
+
