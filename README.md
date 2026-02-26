@@ -19,19 +19,19 @@
 Run inline code:
 
 ```bash
-GOWORK=off go run ./cmd/XXX --eval 'const db = require("cozodb").open(); db.backend'
+GOWORK=off go run ./cmd/cozo --eval 'const db = require("cozodb").open(); db.backend'
 ```
 
 Run a script file:
 
 ```bash
-GOWORK=off go run ./cmd/XXX --script ./examples/demo.js
+GOWORK=off go run ./cmd/cozo --script ./examples/demo.js
 ```
 
 Start REPL:
 
 ```bash
-GOWORK=off go run ./cmd/XXX
+GOWORK=off go run ./cmd/cozo
 ```
 
 ## JavaScript usage

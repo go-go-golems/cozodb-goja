@@ -1203,3 +1203,66 @@ The output includes practical commands with `cozo_cgo` flags and engine options.
 - Final suite + docs validation commands:
   - `go test ./... -count=1`
   - `make run-cgo-js-examples`
+
+## Step 24: Rename CLI Entrypoint (`cmd/XXX` -> `cmd/cozo`) and Release Wiring Cleanup
+
+This step replaced the scaffold placeholder binary name with the actual CLI name (`cozo`) and aligned build/release metadata.
+
+### Prompt Context
+
+**User prompt (verbatim):** "yes, and rename XXX to `cozo` and clean up goreleaser accordingly, see $go-go-golems-project-setup"
+
+**Assistant interpretation:** Apply a hard rename of the command path and normalize all user-facing/project release wiring to `cozo`.
+
+**Inferred user intent:** Remove placeholder naming debt and make the repo directly releasable/runnable using stable naming.
+
+### What I did
+
+- Renamed `cmd/XXX` to `cmd/cozo`.
+- Updated `README.md` examples to use `go run ./cmd/cozo`.
+- Updated `Makefile`:
+  - release module check now points to `github.com/go-go-golems/cozodb-goja`,
+  - install target now builds `./cmd/cozo` into `./dist/cozo`,
+  - install copy path now resolves `cozo` binary.
+- Updated `.goreleaser.yaml`:
+  - `project_name: cozo`,
+  - build IDs to `cozo-linux` / `cozo-darwin`,
+  - `main: ./cmd/cozo` and `binary: cozo`,
+  - brew metadata renamed and pointed at `github.com/go-go-golems/cozodb-goja`,
+  - package descriptions updated from placeholder text.
+
+### Why
+
+- Placeholder names (`XXX`) made commands and release metadata ambiguous and error-prone.
+
+### What worked
+
+- `GOWORK=off go test ./... -count=1` passed.
+- `GOWORK=off go run ./cmd/cozo --eval 'const db = require("cozodb").open(); db.backend'` returned `fake`.
+
+### What didn't work
+
+- `goreleaser check` exits non-zero because the scaffold still uses deprecated keys (`snapshot.name_template`, `brews`) inherited from template defaults.
+
+### What I learned
+
+- Binary rename is straightforward, but release checks are sensitive to upstream template deprecations not specific to this repo.
+
+### What was tricky to build
+
+- Keeping this change isolated from in-flight `rel.get` API fixes required careful staging.
+
+### What warrants a second pair of eyes
+
+- Decide whether to modernize the shared GoReleaser template now or defer with a dedicated infra ticket.
+
+### What should be done in the future
+
+- Migrate off deprecated GoReleaser keys so `goreleaser check` is clean by default.
+
+### Code review instructions
+
+- Validate:
+  - `go run ./cmd/cozo --eval 'const db = require("cozodb").open(); db.backend'`
+  - `go test ./... -count=1`
+  - inspect `.goreleaser.yaml`, `Makefile`, and `README.md` for name consistency.

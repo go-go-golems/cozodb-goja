@@ -71,7 +71,7 @@ Added goja module bridge, CLI runner, go-go-goja integration coverage, and lint 
 
 ### Related Files
 
-- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/cmd/XXX/main.go — Eval script and REPL entrypoint
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/cmd/cozo/main.go — Eval script and REPL entrypoint
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb.go — Promise-based require module API
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/pkg/cozoapi/module/cozodb_go_go_goja_integration_test.go — go-go-goja runtime integration test
 
@@ -84,3 +84,15 @@ Updated parent workspace go.work via go work use . to Go 1.25.7; workspace-mode 
 
 - /home/manuel/workspaces/2026-02-24/cozodb-goja-init/go.work — Updated workspace Go version and module list ordering
 
+
+## 2026-02-26
+
+Renamed scaffold placeholder CLI path and release metadata from `XXX` to `cozo` and aligned local build docs.
+
+### Related Files
+
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/cmd/cozo/main.go — New canonical CLI entrypoint path
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/.goreleaser.yaml — `project_name`, build IDs, binary names, and metadata now use `cozo`
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/Makefile — Install and release module checks updated to `cozo`/`cozodb-goja`
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/README.md — CLI usage examples now reference `./cmd/cozo`
+- /home/manuel/workspaces/2026-02-24/cozodb-goja-init/cozodb-goja/ttmp/2026/02/24/COJS-01-INITIAL-BUILD--initial-build-plan-for-cozodb-goja-js-api/reference/01-investigation-diary-cozodb-goja-js-api.md — Diary entry added for rename/validation
