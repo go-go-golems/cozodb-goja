@@ -22,3 +22,8 @@
 - Verification:
   - `go test ./cmd/cozo-tui ./internal/geppettohost ./internal/tui/screens/vsearch -count=1` passes.
   - `make run-cgo-seed-only SEED_DB=/tmp/cozo-tui-real-seed-make.db SEED_EMBED_FLAGS='--embed-provider openai --embed-engine text-embedding-3-small --embed-dimensions 384'` completes successfully against real provider settings.
+
+## 2026-02-25
+
+Ticket closed
+

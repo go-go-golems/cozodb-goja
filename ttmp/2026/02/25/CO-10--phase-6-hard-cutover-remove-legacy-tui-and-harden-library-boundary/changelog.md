@@ -26,3 +26,16 @@
 
 CO-10 closed: hard cutover complete, legacy path guardrails active
 
+## 2026-02-26
+
+- Added follow-up hard-cutover tasks for JS plugin contract runtime ownership split.
+- In relocated extraction runtime (`cozo-extraction-tui`):
+  - copied JS `geppetto` module integration to local `internal/jsmodules/geppetto`,
+  - added local `cozo/plugins` native module (`defineExtractorPlugin`, `wrapExtractorRun`),
+  - migrated active scripts/tests/docs from `require("geppetto/plugins")` to `require("cozo/plugins")`,
+  - rewired runtime registration to local modules and removed stale copied `generate.go`.
+- In `cozodb-goja` ticket artifacts:
+  - removed `defineExtractorPlugin`/`wrapExtractorRun` usage from COJS-01 probe scripts and CO-05 template script by converting to explicit descriptor exports.
+- Validation:
+  - `GOWORK=off go test ./... -count=1` passed in `cozo-extraction-tui`.
+  - `cozo-plugin-run` fixture smoke succeeded with `cozo/plugins`.

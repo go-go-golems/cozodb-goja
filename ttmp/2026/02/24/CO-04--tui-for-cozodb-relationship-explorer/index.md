@@ -1,7 +1,7 @@
 ---
 Title: TUI for CozoDB Relationship Explorer
 Ticket: CO-04
-Status: active
+Status: complete
 Topics:
     - cozodb
     - tui
@@ -24,11 +24,12 @@ ExternalSources:
     - https://github.com/charmbracelet/bubbletea
     - https://github.com/charmbracelet/lipgloss
     - https://github.com/charmbracelet/bubbles
-Summary: "Terminal UI for exploring the CozoDB entity extraction database"
-LastUpdated: 2026-02-24T20:00:00-05:00
-WhatFor: "Interactively browse people, relationships, events, and behaviors stored in CozoDB"
-WhenToUse: "After extracting entities with the JS runner, use this TUI to explore and query the results"
+Summary: Terminal UI for exploring the CozoDB entity extraction database
+LastUpdated: 2026-02-25T22:10:45.422782451-05:00
+WhatFor: Interactively browse people, relationships, events, and behaviors stored in CozoDB
+WhenToUse: After extracting entities with the JS runner, use this TUI to explore and query the results
 ---
+
 
 # TUI for CozoDB Relationship Explorer
 

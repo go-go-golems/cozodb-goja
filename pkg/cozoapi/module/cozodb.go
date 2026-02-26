@@ -244,19 +244,17 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	_ = obj.Set("name", rel.Name())
 
 	_ = obj.Set("create", func(call goja.FunctionCall) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.create", func() (goja.Value, error) {
 			if len(call.Arguments) < 1 {
 				return nil, fmt.Errorf("rel.create requires a spec object")
 			}
-			spec := cozoapi.RelationSpec{}
-			if err := vm.ExportTo(call.Arguments[0], &spec); err != nil {
-				return nil, fmt.Errorf("decode relation spec: %w", err)
+			spec, err := decodeRelationSpec(vm, call.Arguments[0])
+			if err != nil {
+				return nil, err
 			}
-			opts := cozoapi.RelationCreateOptions{}
-			if len(call.Arguments) > 1 && !goja.IsUndefined(call.Arguments[1]) && !goja.IsNull(call.Arguments[1]) {
-				if err := vm.ExportTo(call.Arguments[1], &opts); err != nil {
-					return nil, fmt.Errorf("decode relation create options: %w", err)
-				}
+			opts, err := decodeRelationCreateOptions(vm, argAt(call.Arguments, 1))
+			if err != nil {
+				return nil, err
 			}
 			if err := rel.Create(context.Background(), spec, opts); err != nil {
 				return nil, err
@@ -265,9 +263,12 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 		})
 	})
 
-	buildMutation := func(run func(ctx context.Context, rows []map[string]cozoapi.CozoValue, opts cozoapi.RelationMutationOptions) (cozoapi.CozoResult, error)) func(goja.FunctionCall) goja.Value {
+	buildMutation := func(
+		operation string,
+		run func(ctx context.Context, rows []map[string]cozoapi.CozoValue, opts cozoapi.RelationMutationOptions) (cozoapi.CozoResult, error),
+	) func(goja.FunctionCall) goja.Value {
 		return func(call goja.FunctionCall) goja.Value {
-			return promise(vm, func() (goja.Value, error) {
+			return relationPromise(vm, operation, func() (goja.Value, error) {
 				rows, opts, err := decodeMutationInput(vm, call.Arguments)
 				if err != nil {
 					return nil, err
@@ -281,14 +282,14 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 		}
 	}
 
-	_ = obj.Set("put", buildMutation(rel.Put))
-	_ = obj.Set("insert", buildMutation(rel.Insert))
-	_ = obj.Set("update", buildMutation(rel.Update))
-	_ = obj.Set("rm", buildMutation(rel.Rm))
-	_ = obj.Set("del", buildMutation(rel.Del))
+	_ = obj.Set("put", buildMutation("rel.put", rel.Put))
+	_ = obj.Set("insert", buildMutation("rel.insert", rel.Insert))
+	_ = obj.Set("update", buildMutation("rel.update", rel.Update))
+	_ = obj.Set("rm", buildMutation("rel.rm", rel.Rm))
+	_ = obj.Set("del", buildMutation("rel.del", rel.Del))
 
 	_ = obj.Set("get", func(call goja.FunctionCall) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.get", func() (goja.Value, error) {
 			if len(call.Arguments) == 0 {
 				return nil, fmt.Errorf("rel.get requires key object")
 			}
@@ -308,7 +309,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("columns", func() goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.columns", func() (goja.Value, error) {
 			result, err := rel.Columns(context.Background())
 			if err != nil {
 				return nil, err
@@ -318,7 +319,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("indices", func() goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.indices", func() (goja.Value, error) {
 			result, err := rel.Indices(context.Background())
 			if err != nil {
 				return nil, err
@@ -328,7 +329,7 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 	})
 
 	_ = obj.Set("access", func(level string) goja.Value {
-		return promise(vm, func() (goja.Value, error) {
+		return relationPromise(vm, "rel.access", func() (goja.Value, error) {
 			if err := rel.Access(context.Background(), cozoapi.AccessLevel(level)); err != nil {
 				return nil, err
 			}
@@ -340,11 +341,18 @@ func relationHandleToValue(vm *goja.Runtime, rel *cozoapi.RelationHandle) goja.V
 }
 
 func promise(vm *goja.Runtime, fn func() (goja.Value, error)) goja.Value {
+	return promiseWithError(vm, "COZO_JS_ERROR", "", fn)
+}
+
+func relationPromise(vm *goja.Runtime, operation string, fn func() (goja.Value, error)) goja.Value {
+	return promiseWithError(vm, "COZO_REL_ERROR", operation, fn)
+}
+
+func promiseWithError(vm *goja.Runtime, code, operation string, fn func() (goja.Value, error)) goja.Value {
 	p, resolve, reject := vm.NewPromise()
 	result, err := fn()
 	if err != nil {
-		errObj := vm.NewObject()
-		_ = errObj.Set("message", err.Error())
+		errObj := errorObject(vm, code, operation, err)
 		_ = reject(errObj)
 		return vm.ToValue(p)
 	}
@@ -353,6 +361,18 @@ func promise(vm *goja.Runtime, fn func() (goja.Value, error)) goja.Value {
 	}
 	_ = resolve(result)
 	return vm.ToValue(p)
+}
+
+func errorObject(vm *goja.Runtime, code, operation string, err error) *goja.Object {
+	errObj := vm.NewObject()
+	_ = errObj.Set("message", err.Error())
+	if strings.TrimSpace(code) != "" {
+		_ = errObj.Set("code", code)
+	}
+	if strings.TrimSpace(operation) != "" {
+		_ = errObj.Set("operation", operation)
+	}
+	return errObj
 }
 
 func resultToValue(vm *goja.Runtime, result cozoapi.CozoResult) goja.Value {
@@ -597,20 +617,29 @@ func decodeMutationInput(vm *goja.Runtime, args []goja.Value) ([]map[string]cozo
 		return nil, cozoapi.RelationMutationOptions{}, err
 	}
 
-	opts := cozoapi.RelationMutationOptions{}
-	if len(args) > 1 && !isAbsent(args[1]) {
-		obj := args[1].ToObject(vm)
-		if returning := obj.Get("returning"); !isAbsent(returning) {
-			opts.Returning = returning.ToBoolean()
-		}
+	opts, err := decodeRelationMutationOptions(vm, argAt(args, 1))
+	if err != nil {
+		return nil, cozoapi.RelationMutationOptions{}, err
 	}
 
 	return rows, opts, nil
 }
 
 func decodeRows(vm *goja.Runtime, v goja.Value) ([]map[string]cozoapi.CozoValue, error) {
+	if rows, matched, err := decodeTupleRowsPayload(vm, v); matched || err != nil {
+		return rows, err
+	}
+	if rawRows, ok := v.Export().([]any); ok && len(rawRows) > 0 {
+		if _, tupleLike := rawRows[0].([]any); tupleLike {
+			return nil, fmt.Errorf("tuple row arrays require explicit mapping object {headers, rows}")
+		}
+	}
+
 	var mappedRows []map[string]cozoapi.CozoValue
 	if err := vm.ExportTo(v, &mappedRows); err == nil && len(mappedRows) > 0 {
+		if looksLikeTupleMappedRows(mappedRows) {
+			return nil, fmt.Errorf("tuple row arrays require explicit mapping object {headers, rows}")
+		}
 		return mappedRows, nil
 	}
 
@@ -629,15 +658,7 @@ func decodeRows(vm *goja.Runtime, v goja.Value) ([]map[string]cozoapi.CozoValue,
 
 	var arrayRows [][]any
 	if err := vm.ExportTo(v, &arrayRows); err == nil && len(arrayRows) > 0 {
-		rows := make([]map[string]cozoapi.CozoValue, 0, len(arrayRows))
-		for _, raw := range arrayRows {
-			row := map[string]cozoapi.CozoValue{}
-			for j, value := range raw {
-				row[fmt.Sprintf("c%d", j)] = value
-			}
-			rows = append(rows, row)
-		}
-		return rows, nil
+		return nil, fmt.Errorf("tuple row arrays require explicit mapping object {headers, rows}")
 	}
 
 	exported := v.Export()
@@ -656,11 +677,7 @@ func decodeRows(vm *goja.Runtime, v goja.Value) ([]map[string]cozoapi.CozoValue,
 			}
 			rows = append(rows, row)
 		case []any:
-			row := map[string]cozoapi.CozoValue{}
-			for j, value := range typed {
-				row[fmt.Sprintf("c%d", j)] = value
-			}
-			rows = append(rows, row)
+			return nil, fmt.Errorf("tuple row arrays require explicit mapping object {headers, rows}")
 		default:
 			obj := vm.ToValue(raw)
 			mapRow := map[string]cozoapi.CozoValue{}
@@ -673,6 +690,165 @@ func decodeRows(vm *goja.Runtime, v goja.Value) ([]map[string]cozoapi.CozoValue,
 	return rows, nil
 }
 
+func decodeRelationSpec(vm *goja.Runtime, v goja.Value) (cozoapi.RelationSpec, error) {
+	if isAbsent(v) {
+		return cozoapi.RelationSpec{}, fmt.Errorf("relation spec cannot be empty")
+	}
+	obj := v.ToObject(vm)
+
+	keysValue := firstPresentField(obj, "keys", "Keys")
+	if isAbsent(keysValue) {
+		return cozoapi.RelationSpec{}, fmt.Errorf("relation spec requires keys")
+	}
+	keys, err := decodeStringMap(vm, keysValue, "keys")
+	if err != nil {
+		return cozoapi.RelationSpec{}, err
+	}
+	if len(keys) == 0 {
+		return cozoapi.RelationSpec{}, fmt.Errorf("relation spec requires non-empty keys")
+	}
+
+	values := map[string]string{}
+	valuesValue := firstPresentField(obj, "values", "Values")
+	if !isAbsent(valuesValue) {
+		decodedValues, err := decodeStringMap(vm, valuesValue, "values")
+		if err != nil {
+			return cozoapi.RelationSpec{}, err
+		}
+		values = decodedValues
+	}
+
+	return cozoapi.RelationSpec{
+		Keys:   keys,
+		Values: values,
+	}, nil
+}
+
+func decodeRelationCreateOptions(vm *goja.Runtime, v goja.Value) (cozoapi.RelationCreateOptions, error) {
+	opts := cozoapi.RelationCreateOptions{}
+	if isAbsent(v) {
+		return opts, nil
+	}
+	obj := v.ToObject(vm)
+	replaceValue := firstPresentField(obj, "replace", "Replace")
+	if !isAbsent(replaceValue) {
+		opts.Replace = replaceValue.ToBoolean()
+	}
+	return opts, nil
+}
+
+func decodeRelationMutationOptions(vm *goja.Runtime, v goja.Value) (cozoapi.RelationMutationOptions, error) {
+	opts := cozoapi.RelationMutationOptions{}
+	if isAbsent(v) {
+		return opts, nil
+	}
+	obj := v.ToObject(vm)
+	returningValue := firstPresentField(obj, "returning", "Returning")
+	if !isAbsent(returningValue) {
+		opts.Returning = returningValue.ToBoolean()
+	}
+	return opts, nil
+}
+
+func decodeTupleRowsPayload(vm *goja.Runtime, v goja.Value) ([]map[string]cozoapi.CozoValue, bool, error) {
+	if isAbsent(v) {
+		return nil, false, nil
+	}
+	obj := v.ToObject(vm)
+	headersValue := firstPresentField(obj, "headers", "Headers")
+	rowsValue := firstPresentField(obj, "rows", "Rows")
+	if isAbsent(headersValue) && isAbsent(rowsValue) {
+		return nil, false, nil
+	}
+	if isAbsent(headersValue) || isAbsent(rowsValue) {
+		return nil, true, fmt.Errorf("tuple row payload requires both headers and rows")
+	}
+
+	var headers []string
+	if err := vm.ExportTo(headersValue, &headers); err != nil {
+		return nil, true, fmt.Errorf("decode tuple headers: %w", err)
+	}
+	if len(headers) == 0 {
+		return nil, true, fmt.Errorf("tuple row payload requires non-empty headers")
+	}
+
+	normalizedHeaders := make([]string, len(headers))
+	seen := map[string]struct{}{}
+	for i, header := range headers {
+		header = strings.TrimSpace(header)
+		if header == "" {
+			return nil, true, fmt.Errorf("tuple header at index %d is empty", i)
+		}
+		if _, ok := seen[header]; ok {
+			return nil, true, fmt.Errorf("duplicate tuple header %q", header)
+		}
+		seen[header] = struct{}{}
+		normalizedHeaders[i] = header
+	}
+
+	var tupleRows [][]any
+	if err := vm.ExportTo(rowsValue, &tupleRows); err != nil {
+		return nil, true, fmt.Errorf("decode tuple rows: %w", err)
+	}
+
+	out := make([]map[string]cozoapi.CozoValue, 0, len(tupleRows))
+	for i, tuple := range tupleRows {
+		if len(tuple) != len(normalizedHeaders) {
+			return nil, true, fmt.Errorf(
+				"tuple row %d length %d does not match headers length %d",
+				i, len(tuple), len(normalizedHeaders),
+			)
+		}
+		row := make(map[string]cozoapi.CozoValue, len(normalizedHeaders))
+		for j, header := range normalizedHeaders {
+			row[header] = tuple[j]
+		}
+		out = append(out, row)
+	}
+	return out, true, nil
+}
+
+func decodeStringMap(vm *goja.Runtime, v goja.Value, fieldName string) (map[string]string, error) {
+	out := map[string]string{}
+	if err := vm.ExportTo(v, &out); err == nil {
+		return out, nil
+	}
+
+	raw := map[string]any{}
+	if err := vm.ExportTo(v, &raw); err != nil {
+		return nil, fmt.Errorf("decode relation spec %s: %w", fieldName, err)
+	}
+	for key, value := range raw {
+		if value == nil {
+			out[key] = ""
+			continue
+		}
+		s, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("relation spec %s.%s must be a string", fieldName, key)
+		}
+		out[key] = s
+	}
+	return out, nil
+}
+
+func firstPresentField(obj *goja.Object, names ...string) goja.Value {
+	for _, name := range names {
+		v := obj.Get(name)
+		if !isAbsent(v) {
+			return v
+		}
+	}
+	return nil
+}
+
+func argAt(args []goja.Value, idx int) goja.Value {
+	if idx < 0 || idx >= len(args) {
+		return nil
+	}
+	return args[idx]
+}
+
 func decodeStringArray(vm *goja.Runtime, args []goja.Value) ([]string, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("expected string array argument")
@@ -682,6 +858,20 @@ func decodeStringArray(vm *goja.Runtime, args []goja.Value) ([]string, error) {
 		return nil, fmt.Errorf("decode string array: %w", err)
 	}
 	return items, nil
+}
+
+func looksLikeTupleMappedRows(rows []map[string]cozoapi.CozoValue) bool {
+	for _, row := range rows {
+		if len(row) == 0 {
+			return false
+		}
+		for key := range row {
+			if _, err := strconv.Atoi(key); err != nil {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func hasOwnProperty(obj *goja.Object, key string) bool {

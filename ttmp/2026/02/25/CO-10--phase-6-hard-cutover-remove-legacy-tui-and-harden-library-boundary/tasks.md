@@ -57,3 +57,15 @@
 - [x] Run `docmgr doctor --ticket CO-10 --stale-after 30`
 - [x] Mark CO-10 tasks complete
 - [x] Add final cutover summary note to CO-06 ticket
+
+## Workstream H: JS Plugin Contract Hard Cutover (Geppetto -> Cozo Runtime Ownership)
+
+- [x] Add local `cozo/plugins` JS native module in relocated extraction runtime
+- [x] Copy JS `geppetto` module runtime ownership into `cozo-extraction-tui/internal/jsmodules/geppetto`
+- [x] Stop importing external `geppetto/pkg/js/modules/geppetto` from runtime wiring
+- [x] Migrate active extractor scripts from `require("geppetto/plugins")` to `require("cozo/plugins")`
+- [x] Migrate runtime/tests from `geppetto/plugins` assertions to `cozo/plugins`
+- [x] Update onboarding/cookbook docs to reflect `cozo/plugins` module path
+- [x] Remove `defineExtractorPlugin`/`wrapExtractorRun` usage from `cozodb-goja` ticket script artifacts
+- [x] Validate relocation with `go test ./... -count=1` in `cozo-extraction-tui`
+- [x] Validate plugin smoke with `cozo-plugin-run` fixture script against stdin transcript

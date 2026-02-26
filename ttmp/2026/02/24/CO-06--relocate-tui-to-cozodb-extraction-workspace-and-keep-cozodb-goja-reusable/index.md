@@ -1,7 +1,7 @@
 ---
 Title: Relocate TUI to CozoDB Extraction Workspace and Keep Cozodb-Goja Reusable
 Ticket: CO-06
-Status: active
+Status: complete
 Topics:
     - cozodb
     - go
@@ -12,11 +12,12 @@ Intent: long-term
 Owners: []
 RelatedFiles: []
 ExternalSources: []
-Summary: "Relocation plan for moving the Bubble Tea TUI into the extraction workspace while preserving cozodb-goja as reusable Cozo/Goja bindings"
-LastUpdated: 2026-02-25T11:36:00-05:00
-WhatFor: "Plan and track relocation of the Cozo TUI into the extraction workspace while keeping cozodb-goja as reusable infrastructure"
-WhenToUse: "Use when implementing CO-06 migration phases or reviewing architecture/reuse decisions"
+Summary: Relocation plan for moving the Bubble Tea TUI into the extraction workspace while preserving cozodb-goja as reusable Cozo/Goja bindings
+LastUpdated: 2026-02-25T22:10:45.657655985-05:00
+WhatFor: Plan and track relocation of the Cozo TUI into the extraction workspace while keeping cozodb-goja as reusable infrastructure
+WhenToUse: Use when implementing CO-06 migration phases or reviewing architecture/reuse decisions
 ---
+
 
 # Relocate TUI to CozoDB Extraction Workspace and Keep Cozodb-Goja Reusable
 
