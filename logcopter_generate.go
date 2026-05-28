@@ -1,0 +1,3 @@
+package cozodb_goja
+
+//go:generate go tool logcopter-gen -area-prefix go-go-golems.cozodb-goja -strip-prefix github.com/go-go-golems/cozodb-goja ./cmd/... ./pkg/...
