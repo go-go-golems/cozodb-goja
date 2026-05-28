@@ -62,3 +62,11 @@ COZO_BINARY=$(shell which cozo)
 install:
 	GOWORK=off go build -o ./dist/cozo ./cmd/cozo && \
 		cp ./dist/cozo $(COZO_BINARY)
+
+.PHONY: logcopter-generate
+logcopter-generate:
+	GOWORK=off go generate ./...
+
+.PHONY: logcopter-check
+logcopter-check:
+	GOWORK=off go tool logcopter-gen -area-prefix go-go-golems.cozodb-goja -strip-prefix github.com/go-go-golems/cozodb-goja -check ./cmd/... ./pkg/...
